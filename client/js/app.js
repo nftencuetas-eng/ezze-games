@@ -136,9 +136,11 @@ class EzeGamingApp {
       card.style.setProperty('--card-color', game.accentColor || '#3b82f6');
       card.style.animationDelay = `${index * 0.05}s`;
 
+      const coverSrc = game.coverImage || `/assets/covers/${game.slug}.jpg`;
+
       card.innerHTML = `
-        <div class="card-thumb-wrapper" style="background: ${game.bannerGradient || 'linear-gradient(135deg, #1e293b, #0f172a)'};">
-          <span class="card-emoji-thumb">${game.thumbnail || '🎮'}</span>
+        <div class="card-thumb-wrapper">
+          <img src="${coverSrc}" class="card-cover-img" alt="${game.title}" loading="lazy" onerror="this.src='/assets/covers/moto-x3m.jpg'">
           ${game.badge ? `<span class="game-badge">${game.badge}</span>` : ''}
           <button class="btn-card-fav ${isFav ? 'active' : ''}" title="Añadir a favoritos">⭐</button>
           <div class="card-overlay">
@@ -192,6 +194,8 @@ class EzeGamingApp {
     const game = this.featuredGames[index] || this.games[0];
     if (!game) return;
 
+    const coverSrc = game.coverImage || `/assets/covers/${game.slug}.jpg`;
+
     this.heroSlider.innerHTML = `
       <div class="hero-slide active" style="background: ${game.bannerGradient || 'linear-gradient(135deg, #1e293b, #0f172a)'};">
         <div class="hero-content">
@@ -208,7 +212,7 @@ class EzeGamingApp {
           </div>
         </div>
         <div class="hero-visual">
-          <div class="hero-giant-emoji">${game.thumbnail || '🎮'}</div>
+          <img src="${coverSrc}" class="hero-cover-img" alt="${game.title}">
         </div>
       </div>
     `;

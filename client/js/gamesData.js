@@ -1,6 +1,6 @@
 /**
  * CATÁLOGO OFICIAL DE VIDEOJUEGOS - EZZE.GAMES
- * 18 Videojuegos 100% completos, autohospedados y sin anuncios
+ * 18 Videojuegos 100% autohospedados, con portadas reales en alta definición y sin anuncios.
  */
 
 const CATEGORIES = [
@@ -28,10 +28,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'HOT 🔥',
-    thumbnail: '🏍️',
+    coverImage: '/assets/covers/moto-x3m.jpg',
     accentColor: '#f97316',
     bannerGradient: 'linear-gradient(135deg, #f97316, #c2410c)',
-    gamePath: 'games/moto-x3m/index.html'
+    gamePath: '/games/moto-x3m/index.html'
   },
   {
     id: 'drift-hunters',
@@ -45,10 +45,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'TOP 🏆',
-    thumbnail: '🏎️',
+    coverImage: '/assets/covers/drift-hunters.jpg',
     accentColor: '#ef4444',
     bannerGradient: 'linear-gradient(135deg, #ef4444, #991b1b)',
-    gamePath: 'games/drift-hunters/index.html'
+    gamePath: '/games/drift-hunters/index.html'
   },
   {
     id: 'slope-3d',
@@ -62,10 +62,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'POPULAR ⭐',
-    thumbnail: '🟢',
+    coverImage: '/assets/covers/slope-3d.jpg',
     accentColor: '#10b981',
     bannerGradient: 'linear-gradient(135deg, #10b981, #047857)',
-    gamePath: 'games/slope-3d/index.html'
+    gamePath: '/games/slope-3d/index.html'
   },
   {
     id: 'subway-runner',
@@ -79,10 +79,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'FAVORITO 💖',
-    thumbnail: '🏃',
+    coverImage: '/assets/covers/subway-runner.jpg',
     accentColor: '#3b82f6',
     bannerGradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-    gamePath: 'games/subway-runner/index.html'
+    gamePath: '/games/subway-runner/index.html'
   },
   {
     id: 'crossy-road',
@@ -96,10 +96,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'CLASICO 🎮',
-    thumbnail: '🐔',
+    coverImage: '/assets/covers/crossy-road.jpg',
     accentColor: '#eab308',
     bannerGradient: 'linear-gradient(135deg, #eab308, #a16207)',
-    gamePath: 'games/crossy-road/index.html'
+    gamePath: '/games/crossy-road/index.html'
   },
 
   // --- ACCIÓN & MULTIJUGADOR ---
@@ -115,10 +115,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'TENDENCIA 🔥',
-    thumbnail: '🪝',
+    coverImage: '/assets/covers/stickman-hook.jpg',
     accentColor: '#ec4899',
     bannerGradient: 'linear-gradient(135deg, #ec4899, #be185d)',
-    gamePath: 'games/stickman-hook/index.html'
+    gamePath: '/games/stickman-hook/index.html'
   },
   {
     id: 'paper-io-2',
@@ -132,10 +132,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'BATALLA ⚔️',
-    thumbnail: '🎨',
+    coverImage: '/assets/covers/paper-io-2.jpg',
     accentColor: '#8b5cf6',
     bannerGradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-    gamePath: 'games/paper-io-2/index.html'
+    gamePath: '/games/paper-io-2/index.html'
   },
   {
     id: 'zombie-derby',
@@ -149,10 +149,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: false,
     badge: 'ZOMBIES 🧟',
-    thumbnail: '🧟',
+    coverImage: '/assets/covers/zombie-derby.jpg',
     accentColor: '#10b981',
     bannerGradient: 'linear-gradient(135deg, #10b981, #065f46)',
-    gamePath: 'games/zombie-derby/index.html'
+    gamePath: '/games/zombie-derby/index.html'
   },
   {
     id: 'retro-knight',
@@ -166,10 +166,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: false,
     badge: 'AVENTURA 🗡️',
-    thumbnail: '⚔️',
+    coverImage: '/assets/covers/retro-knight.svg',
     accentColor: '#a855f7',
     bannerGradient: 'linear-gradient(135deg, #a855f7, #7e22ce)',
-    gamePath: 'games/retro-knight/index.html'
+    gamePath: '/games/retro-knight/index.html'
   },
 
   // --- PUZZLES & ESTRATEGIA ---
@@ -185,10 +185,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'LEGENDARIO 🌟',
-    thumbnail: '🍬',
+    coverImage: '/assets/covers/cut-the-rope.jpg',
     accentColor: '#84cc16',
     bannerGradient: 'linear-gradient(135deg, #84cc16, #4d7c0f)',
-    gamePath: 'games/cut-the-rope/index.html'
+    gamePath: '/games/cut-the-rope/index.html'
   },
   {
     id: 'hextris-hd',
@@ -202,10 +202,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'HEX 🔷',
-    thumbnail: '🛑',
+    coverImage: '/assets/covers/hextris-hd.svg',
     accentColor: '#06b6d4',
     bannerGradient: 'linear-gradient(135deg, #06b6d4, #0891b2)',
-    gamePath: 'games/hextris-hd/index.html'
+    gamePath: '/games/hextris-hd/index.html'
   },
   {
     id: 'chess-pro',
@@ -219,10 +219,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: false,
     badge: 'ESTRATEGIA ♟️',
-    thumbnail: '♟️',
+    coverImage: '/assets/covers/chess-pro.jpg',
     accentColor: '#64748b',
     bannerGradient: 'linear-gradient(135deg, #64748b, #334155)',
-    gamePath: 'games/chess-pro/index.html'
+    gamePath: '/games/chess-pro/index.html'
   },
   {
     id: 'tower-defense',
@@ -236,10 +236,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'TORRES 🏰',
-    thumbnail: '🏰',
+    coverImage: '/assets/covers/tower-defense.svg',
     accentColor: '#d97706',
     bannerGradient: 'linear-gradient(135deg, #d97706, #92400e)',
-    gamePath: 'games/tower-defense/index.html'
+    gamePath: '/games/tower-defense/index.html'
   },
   {
     id: 'puzzle-2048',
@@ -253,10 +253,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: false,
     badge: 'PUZZLE 🧩',
-    thumbnail: '🧩',
+    coverImage: '/assets/covers/puzzle-2048.svg',
     accentColor: '#38bdf8',
     bannerGradient: 'linear-gradient(135deg, #38bdf8, #0284c7)',
-    gamePath: 'games/puzzle-2048/index.html'
+    gamePath: '/games/puzzle-2048/index.html'
   },
 
   // --- DEPORTES & ARCADE CLÁSICO ---
@@ -272,10 +272,10 @@ const LOCAL_GAMES = [
     featured: true,
     trending: true,
     badge: 'SLAM 🏀',
-    thumbnail: '🏀',
+    coverImage: '/assets/covers/basket-slam.jpg',
     accentColor: '#ea580c',
     bannerGradient: 'linear-gradient(135deg, #ea580c, #9a3412)',
-    gamePath: 'games/basket-slam/index.html'
+    gamePath: '/games/basket-slam/index.html'
   },
   {
     id: 'helix-jump',
@@ -289,10 +289,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'ADRENALINA ⚡',
-    thumbnail: '🌀',
+    coverImage: '/assets/covers/helix-jump.jpg',
     accentColor: '#f43f5e',
     bannerGradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
-    gamePath: 'games/helix-jump/index.html'
+    gamePath: '/games/helix-jump/index.html'
   },
   {
     id: 'pacman-hd',
@@ -306,10 +306,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: true,
     badge: 'ARCADE 🕹️',
-    thumbnail: '🟡',
+    coverImage: '/assets/covers/pacman-hd.jpg',
     accentColor: '#facc15',
     bannerGradient: 'linear-gradient(135deg, #facc15, #ca8a04)',
-    gamePath: 'games/pacman-hd/index.html'
+    gamePath: '/games/pacman-hd/index.html'
   },
   {
     id: 'space-arcade',
@@ -323,10 +323,10 @@ const LOCAL_GAMES = [
     featured: false,
     trending: false,
     badge: 'GALAXY 🚀',
-    thumbnail: '👾',
+    coverImage: '/assets/covers/space-arcade.svg',
     accentColor: '#3b82f6',
     bannerGradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-    gamePath: 'games/space-arcade/index.html'
+    gamePath: '/games/space-arcade/index.html'
   }
 ];
 

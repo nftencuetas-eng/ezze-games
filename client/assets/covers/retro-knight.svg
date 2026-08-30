@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#581c87" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090514" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <!-- Sword & Shield -->
+  <path d="M640,120 L660,140 L650,340 L630,340 L620,140 Z" fill="#e2e8f0" filter="url(#glow)"/>
+  <rect x="610" y="340" width="60" height="16" rx="4" fill="#a855f7"/>
+  <rect x="632" y="356" width="16" height="40" rx="4" fill="#64748b"/>
+  <!-- Title -->
+  <text x="640" y="470" font-family="'Bungee', sans-serif" font-size="64" font-weight="900" text-anchor="middle" fill="#000" dy="6">REINO DORADO</text>
+  <text x="640" y="470" font-family="'Bungee', sans-serif" font-size="64" font-weight="900" text-anchor="middle" fill="url(#gold)" filter="url(#glow)">REINO DORADO</text>
+  <text x="640" y="540" font-family="'Bungee', sans-serif" font-size="32" text-anchor="middle" fill="#fff" letter-spacing="6">LEYENDA DEL CABALLERO RETRO</text>
+</svg>

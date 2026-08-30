@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <!-- Grid Blocks -->
+  <g transform="translate(440, 100)">
+    <rect x="0" y="0" width="90" height="90" rx="14" fill="#38bdf8" filter="url(#glow)"/>
+    <text x="45" y="58" font-family="'Bungee', sans-serif" font-size="36" text-anchor="middle" fill="#fff">2</text>
+    <rect x="105" y="0" width="90" height="90" rx="14" fill="#818cf8"/>
+    <text x="150" y="58" font-family="'Bungee', sans-serif" font-size="36" text-anchor="middle" fill="#fff">4</text>
+    <rect x="210" y="0" width="90" height="90" rx="14" fill="#c084fc"/>
+    <text x="255" y="58" font-family="'Bungee', sans-serif" font-size="36" text-anchor="middle" fill="#fff">8</text>
+    <rect x="315" y="0" width="90" height="90" rx="14" fill="#f472b6"/>
+    <text x="360" y="58" font-family="'Bungee', sans-serif" font-size="32" text-anchor="middle" fill="#fff">16</text>
+
+    <rect x="0" y="105" width="90" height="90" rx="14" fill="#fb7185"/>
+    <text x="45" y="163" font-family="'Bungee', sans-serif" font-size="32" text-anchor="middle" fill="#fff">32</text>
+    <rect x="105" y="105" width="90" height="90" rx="14" fill="#f97316"/>
+    <text x="150" y="163" font-family="'Bungee', sans-serif" font-size="32" text-anchor="middle" fill="#fff">64</text>
+    <rect x="210" y="105" width="90" height="90" rx="14" fill="#eab308"/>
+    <text x="255" y="163" font-family="'Bungee', sans-serif" font-size="28" text-anchor="middle" fill="#fff">128</text>
+    <rect x="315" y="105" width="90" height="90" rx="14" fill="#84cc16"/>
+    <text x="360" y="163" font-family="'Bungee', sans-serif" font-size="28" text-anchor="middle" fill="#fff">256</text>
+  </g>
+  <!-- Mega 2048 Tile -->
+  <rect x="490" y="320" width="300" height="150" rx="24" fill="url(#gold)" filter="url(#glow)"/>
+  <text x="640" y="425" font-family="'Bungee', sans-serif" font-size="92" font-weight="900" text-anchor="middle" fill="#000">2048</text>
+  <!-- Title -->
+  <text x="640" y="550" font-family="'Bungee', sans-serif" font-size="54" font-weight="900" text-anchor="middle" fill="#38bdf8" filter="url(#glow)">NEON 2048 MASTER</text>
+  <text x="640" y="610" font-family="'Bungee', sans-serif" font-size="24" text-anchor="middle" fill="#94a3b8" letter-spacing="4">THE LEGENDARY PUZZLE</text>
+</svg>

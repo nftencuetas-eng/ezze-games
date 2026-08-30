@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78350f" />
+      <stop offset="50%" stop-color="#451a03" />
+      <stop offset="100%" stop-color="#1c1917" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <circle cx="640" cy="360" r="300" fill="#f59e0b" opacity="0.08" />
+  <!-- Castle & Towers silhouette -->
+  <path d="M200,600 L200,420 L240,420 L240,460 L280,460 L280,420 L320,420 L320,600 Z" fill="#b45309" opacity="0.4"/>
+  <path d="M960,600 L960,420 L1000,420 L1000,460 L1040,460 L1040,420 L1080,420 L1080,600 Z" fill="#b45309" opacity="0.4"/>
+  <path d="M400,650 L400,340 L500,300 L600,340 L600,650 Z" fill="#d97706" opacity="0.6"/>
+  <path d="M680,650 L680,340 L780,300 L880,340 L880,650 Z" fill="#d97706" opacity="0.6"/>
+  <path d="M500,650 L500,240 L640,160 L780,240 L780,650 Z" fill="#f59e0b" opacity="0.8"/>
+  <!-- Arrows & Fire -->
+  <circle cx="480" cy="220" r="16" fill="#ef4444" filter="url(#glow)"/>
+  <circle cx="800" cy="220" r="16" fill="#ef4444" filter="url(#glow)"/>
+  <!-- Title -->
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="64" font-weight="900" text-anchor="middle" fill="#000" dy="6">TOWER DEFENSE</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="64" font-weight="900" text-anchor="middle" fill="url(#gold)" filter="url(#glow)">TOWER DEFENSE</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="34" text-anchor="middle" fill="#fff" letter-spacing="8">KINGDOM BATTLE</text>
+  <rect x="520" y="540" width="240" height="42" rx="10" fill="#ef4444" filter="url(#glow)"/>
+  <text x="640" y="568" font-family="sans-serif" font-weight="bold" font-size="18" text-anchor="middle" fill="#fff">OFFICIAL GAME COVER</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#083344" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5f3fc" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#0e7490" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <!-- Hexagon Rings -->
+  <polygon points="640,160 813,260 813,460 640,560 467,460 467,260" fill="none" stroke="#06b6d4" stroke-width="12" filter="url(#glow)" opacity="0.8"/>
+  <polygon points="640,210 770,285 770,435 640,510 510,435 510,285" fill="none" stroke="#ef4444" stroke-width="16" opacity="0.9"/>
+  <polygon points="640,260 726,310 726,410 640,460 554,410 554,310" fill="none" stroke="#f59e0b" stroke-width="20" opacity="0.9"/>
+  <polygon points="640,310 683,335 683,385 640,410 597,385 597,335" fill="#10b981" filter="url(#glow)"/>
+  <!-- Title -->
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="76" font-weight="900" text-anchor="middle" fill="#000" dy="6">HEXTRIS HD</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="76" font-weight="900" text-anchor="middle" fill="url(#cyan)" filter="url(#glow)">HEXTRIS HD</text>
+  <text x="640" y="520" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fff" letter-spacing="6">HEXAGONAL PUZZLE</text>
+</svg>

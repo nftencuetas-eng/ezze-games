@@ -156,10 +156,13 @@ class GamePlayer {
   renderRelated(related) {
     this.relatedListEl.innerHTML = '';
     related.forEach(g => {
+      const coverSrc = g.coverImage || `/assets/covers/${g.slug}.jpg`;
       const card = document.createElement('div');
       card.className = 'related-game-card';
       card.innerHTML = `
-        <div class="related-thumb" style="background: ${g.accentColor || '#3b82f6'};">${g.thumbnail || '🎮'}</div>
+        <div class="related-thumb">
+          <img src="${coverSrc}" class="related-cover-img" alt="${g.title}" onerror="this.src='/assets/covers/moto-x3m.jpg'">
+        </div>
         <div class="related-info">
           <h4>${g.title}</h4>
           <span>⭐ ${g.rating}</span>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <linearGradient id="neon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <!-- Stars -->
+  <circle cx="100" cy="150" r="3" fill="#fff"/>
+  <circle cx="300" cy="80" r="2" fill="#fff"/>
+  <circle cx="800" cy="120" r="3" fill="#fff"/>
+  <circle cx="1100" cy="200" r="2" fill="#fff"/>
+  <circle cx="950" cy="500" r="3" fill="#fff"/>
+  <!-- Spacecraft -->
+  <polygon points="640,160 560,320 640,280 720,320" fill="url(#neon)" filter="url(#glow)"/>
+  <polygon points="640,280 620,340 660,340" fill="#f97316" filter="url(#glow)"/>
+  <!-- Laser beams -->
+  <line x1="600" y1="180" x2="600" y2="40" stroke="#38bdf8" stroke-width="6" filter="url(#glow)"/>
+  <line x1="680" y1="180" x2="680" y2="40" stroke="#38bdf8" stroke-width="6" filter="url(#glow)"/>
+  <!-- Title -->
+  <text x="640" y="460" font-family="'Bungee', sans-serif" font-size="68" font-weight="900" text-anchor="middle" fill="#38bdf8" filter="url(#glow)">SPACE DEFENDERS</text>
+  <text x="640" y="530" font-family="'Bungee', sans-serif" font-size="34" text-anchor="middle" fill="#f43f5e" letter-spacing="6">RETRO GALAXY SHOOTER</text>
+</svg>

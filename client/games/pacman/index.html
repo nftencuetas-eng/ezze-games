@@ -1,58 +1,123 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>HTML5 Pacman</title>
-    
-    <style type="text/css">
-      @font-face {
-	    font-family: 'BDCartoonShoutRegular';
-        src: url('BD_Cartoon_Shout-webfont.ttf') format('truetype');
-	    font-weight: normal;
-	    font-style: normal;
-      }
-      #pacman {
-        height:450px;
-        width:342px;
-        margin:20px auto;
-      }
-      #shim { 
-        font-family: BDCartoonShoutRegular; 
-        position:absolute;
-        visibility:hidden
-      }
-      h1 { font-family: BDCartoonShoutRegular; text-align:center; }
-      body { width:342px; margin:0px auto; font-family:sans-serif; }
-      a { text-decoration:none; }
-    </style>
-
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pac-Man Arcade HD - ezze.games</title>
+  
+  <style type="text/css">
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    @font-face {
+      font-family: 'BDCartoonShoutRegular';
+      src: url('BD_Cartoon_Shout-webfont.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      background: #020617;
+      color: #fff;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'BDCartoonShoutRegular', sans-serif;
+    }
+    #shim {
+      font-family: BDCartoonShoutRegular; 
+      position: absolute;
+      visibility: hidden;
+    }
+    #gameWrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #pacman {
+      height: 450px;
+      width: 342px;
+      margin: 0 auto;
+      border: 3px solid #3b82f6;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+    .dpad {
+      display: grid;
+      grid-template-columns: 50px 50px 50px;
+      grid-template-rows: 50px 50px;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .dpad-btn {
+      background: #1e293b;
+      border: 2px solid #38bdf8;
+      color: #facc15;
+      font-size: 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none;
+    }
+    .dpad-btn:active {
+      background: #38bdf8;
+      color: #000;
+      transform: scale(0.92);
+    }
+  </style>
 </head>
 
 <body>
-  
   <div id="shim">shim for font face</div>
 
-  <h1>HTML5 Pacman</h1>
+  <div id="gameWrapper">
+    <div id="pacman"></div>
 
-  <a href="http://arandomurl.com/">Writeup</a> |
-  Code on <a href="http://arandomurl.com/">Github</a>
+    <div class="dpad">
+      <div></div>
+      <button class="dpad-btn" id="btnUp">▲</button>
+      <div></div>
+      <button class="dpad-btn" id="btnLeft">◀</button>
+      <button class="dpad-btn" id="btnDown">▼</button>
+      <button class="dpad-btn" id="btnRight">▶</button>
+    </div>
+  </div>
 
-  <div id="pacman"></div>
   <script src="pacman.js"></script>
   <script src="modernizr-1.5.min.js"></script>
 
   <script>
-
     var el = document.getElementById("pacman");
 
     if (Modernizr.canvas && Modernizr.localstorage && 
         Modernizr.audio && (Modernizr.audio.ogg || Modernizr.audio.mp3)) {
       window.setTimeout(function () { PACMAN.init(el, "./"); }, 0);
     } else { 
-      el.innerHTML = "Sorry, needs a decent browser<br /><small>" + 
-        "(firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)</small>";
+      el.innerHTML = "Tu navegador no soporta Canvas/Audio.";
     }
-  </script>
 
+    // Touch D-Pad Events
+    function simulateKey(code) {
+      document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: code, which: code }));
+    }
+
+    function bindDpad(id, code) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKey(code); }, { passive: false });
+      btn.addEventListener('mousedown', (e) => { e.preventDefault(); simulateKey(code); });
+    }
+
+    bindDpad('btnUp', 38);
+    bindDpad('btnDown', 40);
+    bindDpad('btnLeft', 37);
+    bindDpad('btnRight', 39);
+  </script>
 </body>
 </html>

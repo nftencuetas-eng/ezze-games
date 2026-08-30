@@ -1,6 +1,6 @@
 /**
  * CATÁLOGO OFICIAL DE VIDEOJUEGOS - EZZE.GAMES
- * 18 Videojuegos completos, famosos y 100% jugables
+ * 18 Videojuegos 100% completos, autohospedados y sin anuncios
  */
 
 const CATEGORIES = [
@@ -22,7 +22,7 @@ const LOCAL_GAMES = [
     title: 'Moto X3M Bike Race',
     category: 'carreras',
     tags: ['Motos', '3D', 'Acrobacias', 'Velocidad'],
-    description: '¡El juego de acrobacias y carreras de motos más famoso del mundo! Supera 25+ niveles llenos de trampas explosivas y saltos mortales.',
+    description: '¡El juego de acrobacias y carreras de motos más famoso del mundo! Supera niveles llenos de rampas, loopings y saltos mortales.',
     rating: 4.9,
     plays: 14850,
     featured: true,
@@ -31,7 +31,7 @@ const LOCAL_GAMES = [
     thumbnail: '🏍️',
     accentColor: '#f97316',
     bannerGradient: 'linear-gradient(135deg, #f97316, #c2410c)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/moto-x3m/index.html'
+    gamePath: 'games/moto-x3m/index.html'
   },
   {
     id: 'drift-hunters',
@@ -39,7 +39,7 @@ const LOCAL_GAMES = [
     title: 'Drift Hunters 3D',
     category: 'carreras',
     tags: ['Autos', '3D', 'Drift', 'Simulador'],
-    description: 'Simulador de carreras y derrapes 3D ultra realista. Elige tu auto favorito, tunéalo en el garaje y quema neumáticos en las curvas.',
+    description: 'Simulador de carreras y derrapes 3D. Controla la potencia, haz quemar los neumáticos y acumula multiplicadores de drift.',
     rating: 4.9,
     plays: 18200,
     featured: true,
@@ -48,7 +48,7 @@ const LOCAL_GAMES = [
     thumbnail: '🏎️',
     accentColor: '#ef4444',
     bannerGradient: 'linear-gradient(135deg, #ef4444, #991b1b)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/drift-hunters/index.html'
+    gamePath: 'games/drift-hunters/index.html'
   },
   {
     id: 'slope-3d',
@@ -56,7 +56,7 @@ const LOCAL_GAMES = [
     title: 'Slope 3D Runner',
     category: '3d',
     tags: ['3D', 'Velocidad', 'Reflejos', 'Arcade'],
-    description: 'Carrera 3D frenética en una pendiente sin fin. Pon a prueba tus reflejos mientras aceleras por túneles futuristas esquivando obstáculos.',
+    description: 'Carrera 3D frenética en una pendiente sin fin. Pon a prueba tus reflejos mientras aceleras esquivando bloques rojos.',
     rating: 4.8,
     plays: 12400,
     featured: true,
@@ -65,7 +65,7 @@ const LOCAL_GAMES = [
     thumbnail: '🟢',
     accentColor: '#10b981',
     bannerGradient: 'linear-gradient(135deg, #10b981, #047857)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/slope/index.html'
+    gamePath: 'games/slope-3d/index.html'
   },
   {
     id: 'subway-runner',
@@ -82,7 +82,7 @@ const LOCAL_GAMES = [
     thumbnail: '🏃',
     accentColor: '#3b82f6',
     bannerGradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/subway-surfers-unity/index.html'
+    gamePath: 'games/subway-runner/index.html'
   },
   {
     id: 'crossy-road',
@@ -99,7 +99,7 @@ const LOCAL_GAMES = [
     thumbnail: '🐔',
     accentColor: '#eab308',
     bannerGradient: 'linear-gradient(135deg, #eab308, #a16207)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/crossyroad/index.html'
+    gamePath: 'games/crossy-road/index.html'
   },
 
   // --- ACCIÓN & MULTIJUGADOR ---
@@ -109,7 +109,7 @@ const LOCAL_GAMES = [
     title: 'Stickman Hook Pro',
     category: 'accion',
     tags: ['Stickman', 'Física', 'Acrobacias', 'Aventura'],
-    description: '¡Engánchate con tu cuerda elástica y realiza acrobacias increíbles por el aire para cruzar la línea de meta en más de 100 niveles!',
+    description: '¡Engánchate con tu cuerda elástica y realiza acrobacias increíbles por el aire para cruzar la línea de meta!',
     rating: 4.9,
     plays: 16800,
     featured: true,
@@ -118,7 +118,7 @@ const LOCAL_GAMES = [
     thumbnail: '🪝',
     accentColor: '#ec4899',
     bannerGradient: 'linear-gradient(135deg, #ec4899, #be185d)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/stickman-hook/index.html'
+    gamePath: 'games/stickman-hook/index.html'
   },
   {
     id: 'paper-io-2',
@@ -135,15 +135,15 @@ const LOCAL_GAMES = [
     thumbnail: '🎨',
     accentColor: '#8b5cf6',
     bannerGradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/paperio2/index.html'
+    gamePath: 'games/paper-io-2/index.html'
   },
   {
-    id: 'zombie-siege',
-    slug: 'zombie-siege',
+    id: 'zombie-derby',
+    slug: 'zombie-derby',
     title: 'Zombie Derby: Supervivencia',
     category: 'accion',
     tags: ['Zombies', 'Acción', 'Armas', 'Disparos'],
-    description: 'Equipa tu vehículo blindado con metralletas y lanzacohetes para atravesar hordas interminables de zombies.',
+    description: 'Conduce tu camión blindado a través de hordas interminables de zombies y administra tu combustible.',
     rating: 4.7,
     plays: 8700,
     featured: false,
@@ -152,7 +152,7 @@ const LOCAL_GAMES = [
     thumbnail: '🧟',
     accentColor: '#10b981',
     bannerGradient: 'linear-gradient(135deg, #10b981, #065f46)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/zombie-derby/index.html'
+    gamePath: 'games/zombie-derby/index.html'
   },
   {
     id: 'retro-knight',
@@ -188,7 +188,7 @@ const LOCAL_GAMES = [
     thumbnail: '🍬',
     accentColor: '#84cc16',
     bannerGradient: 'linear-gradient(135deg, #84cc16, #4d7c0f)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/cut-the-rope/index.html'
+    gamePath: 'games/cut-the-rope/index.html'
   },
   {
     id: 'hextris-hd',
@@ -205,7 +205,7 @@ const LOCAL_GAMES = [
     thumbnail: '🛑',
     accentColor: '#06b6d4',
     bannerGradient: 'linear-gradient(135deg, #06b6d4, #0891b2)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/hextris/index.html'
+    gamePath: 'games/hextris-hd/index.html'
   },
   {
     id: 'chess-pro',
@@ -213,7 +213,7 @@ const LOCAL_GAMES = [
     title: 'Chess Grandmaster (Ajedrez Pro)',
     category: 'puzzles',
     tags: ['Ajedrez', 'Estrategia', 'Mente', 'IA'],
-    description: 'El juego de reyes definitivo. Juega contra la Inteligencia Artificial con múltiples niveles o desafía a un amigo en la misma pantalla.',
+    description: 'El juego de reyes definitivo. Juega partidas de ajedrez completas con todas las reglas y movimientos de piezas.',
     rating: 4.9,
     plays: 6500,
     featured: false,
@@ -222,7 +222,7 @@ const LOCAL_GAMES = [
     thumbnail: '♟️',
     accentColor: '#64748b',
     bannerGradient: 'linear-gradient(135deg, #64748b, #334155)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/chess/index.html'
+    gamePath: 'games/chess-pro/index.html'
   },
   {
     id: 'tower-defense',
@@ -230,7 +230,7 @@ const LOCAL_GAMES = [
     title: 'Tower Defense Kingdom',
     category: 'puzzles',
     tags: ['Defensa', 'Torres', 'Estrategia', 'Guerra'],
-    description: 'Coloca torres defensivas, lanza hechizos de fuego y detén a las oleadas de enemigos antes de que invadan tu reino.',
+    description: 'Coloca torres de arqueros y cañones para defender tu reino de las oleadas invasoras.',
     rating: 4.7,
     plays: 8900,
     featured: false,
@@ -239,7 +239,7 @@ const LOCAL_GAMES = [
     thumbnail: '🏰',
     accentColor: '#d97706',
     bannerGradient: 'linear-gradient(135deg, #d97706, #92400e)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/bloons-td-2/index.html'
+    gamePath: 'games/tower-defense/index.html'
   },
   {
     id: 'puzzle-2048',
@@ -266,7 +266,7 @@ const LOCAL_GAMES = [
     title: 'Basketball Stars Slam',
     category: 'deportes',
     tags: ['Baloncesto', 'Deportes', 'Tiros', 'Habilidad'],
-    description: '¡Realiza clavadas espectaculares, triples perfectos y supera torneos de baloncesto 1 vs 1 con jugadores profesionales!',
+    description: '¡Apunta la parábola, encesta canastas perfectas y acumula rachas de fuego!',
     rating: 4.9,
     plays: 13400,
     featured: true,
@@ -275,7 +275,7 @@ const LOCAL_GAMES = [
     thumbnail: '🏀',
     accentColor: '#ea580c',
     bannerGradient: 'linear-gradient(135deg, #ea580c, #9a3412)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/basketball-stars/index.html'
+    gamePath: 'games/basket-slam/index.html'
   },
   {
     id: 'helix-jump',
@@ -292,7 +292,7 @@ const LOCAL_GAMES = [
     thumbnail: '🌀',
     accentColor: '#f43f5e',
     bannerGradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/helix-jump/index.html'
+    gamePath: 'games/helix-jump/index.html'
   },
   {
     id: 'pacman-hd',
@@ -300,7 +300,7 @@ const LOCAL_GAMES = [
     title: 'Pac-Man Arcade Championship',
     category: 'arcade',
     tags: ['Arcade', 'Retro', 'Pacman', 'Fantasmas'],
-    description: 'La leyenda de las maquinitas recreativas. Come todos los puntos del laberinto y caza fantasmas con los puntos de poder.',
+    description: 'La leyenda de las maquinitas recreativas. Come todos los puntos del laberinto y esquiva a los 4 fantasmas.',
     rating: 4.9,
     plays: 17200,
     featured: false,
@@ -309,7 +309,7 @@ const LOCAL_GAMES = [
     thumbnail: '🟡',
     accentColor: '#facc15',
     bannerGradient: 'linear-gradient(135deg, #facc15, #ca8a04)',
-    gamePath: 'https://rawcdn.githack.com/3kh0/3kh0-Assets/main/pacman/index.html'
+    gamePath: 'games/pacman-hd/index.html'
   },
   {
     id: 'space-arcade',

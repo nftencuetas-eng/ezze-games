@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Subway Runner 3D - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; background: #0f172a; }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #3b82f6; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #3b82f6; }
+    .gameover-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+    .gameover-screen.hidden { display: none; }
+    .btn-play { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; font-family: 'Bungee', cursive; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #1e40af; }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box">METROS: <span id="distText">0</span>m</div>
+      <div class="hud-box" style="border-color: #facc15; color: #facc15;">🪙 MONEDAS: <span id="coinText">0</span></div>
+    </div>
+    <canvas id="subwayCanvas"></canvas>
+    <div class="gameover-screen hidden" id="gameOver">
+      <h1 style="font-size: 38px; color: #ef4444; text-shadow: 0 0 25px rgba(239, 68, 68, 0.8);">¡CHOCASTE CON EL TREN!</h1>
+      <p style="font-family: 'Outfit', sans-serif; font-size: 18px; color: #94a3b8;">Distancia recorrida: <strong id="finalDist" style="color: #3b82f6;">0</strong> m</p>
+      <button class="btn-play" id="btnRestart">CORRER DE NUEVO 🔄</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true, onOrientationChange: () => resize() });
+
+    const canvas = document.getElementById('subwayCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let lane = 0; // -1 (izq), 0 (centro), 1 (der)
+    let playerY = 0;
+    let isJumping = false;
+    let jumpVy = 0;
+    let speed = 7;
+    let distance = 0;
+    let coins = 0;
+    let obstacles = [];
+    let gameOver = false;
+
+    function initGame() {
+      lane = 0;
+      playerY = 0;
+      isJumping = false;
+      jumpVy = 0;
+      speed = 7;
+      distance = 0;
+      coins = 0;
+      obstacles = [];
+      gameOver = false;
+      document.getElementById('distText').textContent = '0';
+      document.getElementById('coinText').textContent = '0';
+      document.getElementById('gameOver').classList.add('hidden');
+
+      for (let i = 1; i <= 8; i++) {
+        spawnObstacle(i * 350);
+      }
+    }
+
+    function spawnObstacle(z) {
+      const l = Math.floor(Math.random() * 3) - 1;
+      const type = Math.random() > 0.4 ? 'train' : 'barrier';
+      obstacles.push({ z, lane: l, type, collected: false });
+    }
+
+    function jump() {
+      if (!isJumping && !gameOver) {
+        isJumping = true;
+        jumpVy = -13;
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') if (lane > -1) lane--;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') if (lane < 1) lane++;
+      if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') jump();
+    });
+
+    let touchStartX = 0, touchStartY = 0;
+    window.addEventListener('touchstart', e => {
+      if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    });
+
+    window.addEventListener('touchend', e => {
+      if (e.changedTouches.length > 0) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx < -30 && lane > -1) lane--;
+          if (dx > 30 && lane < 1) lane++;
+        } else {
+          if (dy < -30) jump();
+        }
+      }
+    });
+
+    document.getElementById('btnRestart').addEventListener('click', initGame);
+
+    function update() {
+      if (gameOver) return;
+
+      distance += speed * 0.05;
+      speed += 0.001;
+      document.getElementById('distText').textContent = Math.floor(distance);
+
+      if (isJumping) {
+        playerY += jumpVy;
+        jumpVy += 0.7; // Gravedad
+        if (playerY >= 0) {
+          playerY = 0;
+          isJumping = false;
+        }
+      }
+
+      // Mover obstáculos
+      obstacles.forEach(ob => {
+        ob.z -= speed;
+
+        // Colisión
+        if (ob.z < 120 && ob.z > 30 && ob.lane === lane) {
+          if (ob.type === 'train' || (ob.type === 'barrier' && playerY > -20)) {
+            triggerGameOver();
+          }
+        }
+      });
+
+      // Reciclar obstáculos
+      while (obstacles.length > 0 && obstacles[0].z < -50) {
+        obstacles.shift();
+        const lastZ = obstacles[obstacles.length - 1].z;
+        spawnObstacle(lastZ + 320);
+      }
+    }
+
+    function triggerGameOver() {
+      gameOver = true;
+      document.getElementById('finalDist').textContent = Math.floor(distance);
+      document.getElementById('gameOver').classList.remove('hidden');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      const fov = 300;
+      const horizonY = height * 0.35;
+      const groundY = height * 0.82;
+
+      // 1. Vías de tren
+      const lanesX = [-140, 0, 140];
+
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.moveTo(width / 2 - 30, horizonY);
+      ctx.lineTo(width / 2 + 30, horizonY);
+      ctx.lineTo(width / 2 + 320, groundY);
+      ctx.lineTo(width / 2 - 320, groundY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Líneas de carriles
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      [-70, 70].forEach(lx => {
+        ctx.beginPath();
+        ctx.moveTo(width / 2 + lx * 0.2, horizonY);
+        ctx.lineTo(width / 2 + lx * 2.2, groundY);
+        ctx.stroke();
+      });
+
+      // 2. Dibujar Obstáculos y Trenes
+      const sortedObs = [...obstacles].sort((a, b) => b.z - a.z);
+
+      sortedObs.forEach(ob => {
+        if (ob.z <= 0) return;
+        const scale = fov / (ob.z + fov);
+        const ox = width / 2 + lanesX[ob.lane + 1] * scale * 2.2;
+        const oy = horizonY + (groundY - horizonY) * scale;
+
+        if (ob.type === 'train') {
+          const tw = 90 * scale * 2;
+          const th = 110 * scale * 2;
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(ox - tw / 2, oy - th, tw, th);
+          ctx.strokeStyle = '#fee2e2'; ctx.lineWidth = 2;
+          ctx.strokeRect(ox - tw / 2, oy - th, tw, th);
+
+          // Luces del tren
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath(); ctx.arc(ox - tw * 0.25, oy - th * 0.3, 8 * scale, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(ox + tw * 0.25, oy - th * 0.3, 8 * scale, 0, Math.PI * 2); ctx.fill();
+        } else {
+          // Barrera
+          const bw = 80 * scale * 2;
+          const bh = 35 * scale * 2;
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(ox - bw / 2, oy - bh, bw, bh);
+          ctx.strokeStyle = '#000'; ctx.strokeRect(ox - bw / 2, oy - bh, bw, bh);
+        }
+      });
+
+      // 3. Dibujar Corredor
+      const px = width / 2 + lanesX[lane + 1];
+      const py = groundY + playerY;
+
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(px - 18, py - 60, 36, 60);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(px - 14, py - 85, 28, 25); // Cabeza / Gorra
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(px - 22, py - 4, 44, 8); // Hoverboard
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    initGame();
+    loop();
+  </script>
+</body>
+</html>

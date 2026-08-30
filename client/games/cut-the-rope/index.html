@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cut the Rope: Clásico - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #14532d; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; background: radial-gradient(circle, #22c55e 0%, #15803d 80%, #14532d 100%); cursor: crosshair; }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #84cc16; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #84cc16; }
+    .win-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+    .win-screen.hidden { display: none; }
+    .btn-next { background: linear-gradient(135deg, #84cc16, #4d7c0f); color: #fff; font-family: 'Bungee', cursive; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #365314; }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box" id="lvlText">NIVEL 1</div>
+      <div class="hud-box" style="border-color: #facc15; color: #facc15;">⭐ ESTRELLAS: <span id="starsText">0/3</span></div>
+    </div>
+    <canvas id="ropeCanvas"></canvas>
+    <div class="win-screen hidden" id="winModal">
+      <h1 style="font-size: 38px; color: #84cc16; text-shadow: 0 0 25px rgba(132, 204, 22, 0.8);">🍬 ¡OM NOM ESTÁ FELIZ! 🍬</h1>
+      <p style="font-family: 'Outfit', sans-serif; font-size: 20px; color: #94a3b8;">Estrellas conseguidas: <strong id="winStars" style="color: #facc15;">3/3</strong></p>
+      <button class="btn-next" id="btnNext">SIGUIENTE NIVEL ▶</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true, onOrientationChange: () => resize() });
+
+    const canvas = document.getElementById('ropeCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let level = 1;
+    let candy = { x: 400, y: 200, vx: 0, vy: 0, r: 18 };
+    let omNom = { x: 400, y: 460, r: 40, openMouth: false };
+    let ropes = [];
+    let stars = [];
+    let collectedStars = 0;
+    let gameOver = false;
+
+    function buildLevel(lvl) {
+      candy = { x: width * 0.5, y: height * 0.3, vx: (Math.random() - 0.5) * 4, vy: 0, r: 18 };
+      omNom = { x: width * 0.5 + (lvl % 2 === 0 ? 100 : -100), y: height * 0.78, r: 38, openMouth: false };
+      collectedStars = 0;
+      gameOver = false;
+      document.getElementById('starsText').textContent = `0/3`;
+      document.getElementById('lvlText').textContent = `NIVEL ${lvl}`;
+      document.getElementById('winModal').classList.add('hidden');
+
+      // Cuerdas
+      ropes = [
+        { pinX: width * 0.35, pinY: height * 0.15, length: 180, cut: false },
+        { pinX: width * 0.65, pinY: height * 0.15, length: 180, cut: false }
+      ];
+
+      // Estrellas
+      stars = [
+        { x: width * 0.42, y: height * 0.45, collected: false },
+        { x: width * 0.58, y: height * 0.45, collected: false },
+        { x: omNom.x, y: omNom.y - 80, collected: false }
+      ];
+    }
+
+    // Corte de cuerdas
+    let lastTouch = null;
+    function checkCut(p1, p2) {
+      ropes.forEach(r => {
+        if (!r.cut) {
+          // Intersección línea de corte con cuerda
+          const d = distToSegment(candy, { x: r.pinX, y: r.pinY }, p1, p2);
+          if (d < 15) r.cut = true;
+        }
+      });
+    }
+
+    function distToSegment(p, a, b, c) {
+      // Detección de corte de trazo
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const t = ((c.x - a.x) * dx + (c.y - a.y) * dy) / (dx * dx + dy * dy || 1);
+      if (t >= 0 && t <= 1) {
+        const projX = a.x + t * dx;
+        const projY = a.y + t * dy;
+        return Math.hypot(c.x - projX, c.y - projY);
+      }
+      return 999;
+    }
+
+    window.addEventListener('mousemove', e => {
+      if (e.buttons === 1) {
+        checkCut(candy, { x: e.clientX, y: e.clientY });
+      }
+    });
+
+    window.addEventListener('touchmove', e => {
+      if (e.touches.length > 0) {
+        const t = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        checkCut(candy, t);
+      }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      level++;
+      buildLevel(level);
+    });
+
+    function update() {
+      if (gameOver) return;
+
+      const GRAV = 0.38;
+      candy.vy += GRAV;
+
+      // Físicas de cuerdas activas
+      ropes.forEach(r => {
+        if (!r.cut) {
+          const dx = candy.x - r.pinX;
+          const dy = candy.y - r.pinY;
+          const curDist = Math.hypot(dx, dy);
+
+          if (curDist > r.length) {
+            const angle = Math.atan2(dy, dx);
+            candy.x = r.pinX + Math.cos(angle) * r.length;
+            candy.y = r.pinY + Math.sin(angle) * r.length;
+
+            const tension = (curDist - r.length) * 0.1;
+            candy.vx -= Math.cos(angle) * tension;
+            candy.vy -= Math.sin(angle) * tension;
+          }
+        }
+      });
+
+      candy.vx *= 0.99;
+      candy.vy *= 0.99;
+      candy.x += candy.vx;
+      candy.y += candy.vy;
+
+      // Recolección de estrellas
+      stars.forEach(st => {
+        if (!st.collected && Math.hypot(candy.x - st.x, candy.y - st.y) < candy.r + 20) {
+          st.collected = true;
+          collectedStars++;
+          document.getElementById('starsText').textContent = `${collectedStars}/3`;
+        }
+      });
+
+      // Om Nom abre la boca cuando el caramelo está cerca
+      const distToOmNom = Math.hypot(candy.x - omNom.x, candy.y - omNom.y);
+      omNom.openMouth = distToOmNom < 130;
+
+      // Comer caramelo
+      if (distToOmNom < omNom.r + candy.r && !gameOver) {
+        gameOver = true;
+        document.getElementById('winStars').textContent = `${collectedStars}/3`;
+        document.getElementById('winModal').classList.remove('hidden');
+      }
+
+      // Caída fuera de pantalla
+      if (candy.y > height + 80) {
+        buildLevel(level);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Cuerdas
+      ropes.forEach(r => {
+        if (!r.cut) {
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(r.pinX, r.pinY);
+          ctx.lineTo(candy.x, candy.y);
+          ctx.stroke();
+
+          // Chincheta de anclaje
+          ctx.fillStyle = '#b45309';
+          ctx.beginPath(); ctx.arc(r.pinX, r.pinY, 8, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+
+      // Estrellas
+      stars.forEach(st => {
+        if (!st.collected) {
+          ctx.font = '28px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⭐', st.x, st.y);
+        }
+      });
+
+      // Om Nom
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(omNom.x, omNom.y, omNom.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#15803d'; ctx.lineWidth = 4; ctx.stroke();
+
+      // Ojos de Om Nom
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(omNom.x - 14, omNom.y - 20, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(omNom.x + 14, omNom.y - 20, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(omNom.x - 14, omNom.y - 20, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(omNom.x + 14, omNom.y - 20, 5, 0, Math.PI * 2); ctx.fill();
+
+      // Boca
+      if (omNom.openMouth) {
+        ctx.fillStyle = '#831843';
+        ctx.beginPath(); ctx.arc(omNom.x, omNom.y + 10, 18, 0, Math.PI); ctx.fill();
+        // Dientes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(omNom.x - 10, omNom.y + 10, 6, 6);
+        ctx.fillRect(omNom.x + 4, omNom.y + 10, 6, 6);
+      } else {
+        ctx.strokeStyle = '#14532d';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(omNom.x, omNom.y + 10, 12, 0, Math.PI); ctx.stroke();
+      }
+
+      // Caramelo
+      if (!gameOver) {
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath(); ctx.arc(candy.x, candy.y, candy.r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath(); ctx.arc(candy.x, candy.y, candy.r * 0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 3; ctx.stroke();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    buildLevel(1);
+    loop();
+  </script>
+</body>
+</html>

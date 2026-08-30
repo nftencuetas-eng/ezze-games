@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Moto X3M Bike Race - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #gameWrapper { position: relative; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 65%, #fde047 100%); }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-pill { background: rgba(15, 23, 42, 0.85); border: 2px solid #f97316; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #f97316; text-shadow: 0 0 10px rgba(249, 115, 22, 0.6); }
+    /* Controles táctiles */
+    .touch-bar { position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; pointer-events: none; z-index: 20; }
+    .touch-grp { display: flex; gap: 14px; pointer-events: auto; }
+    .t-btn { width: 62px; height: 62px; border-radius: 50%; background: rgba(15, 23, 42, 0.8); border: 3px solid #fff; color: #fff; font-size: 22px; font-family: 'Bungee'; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
+    .t-btn:active { background: #f97316; transform: scale(0.92); }
+    .win-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+    .win-screen.hidden { display: none; }
+    .btn-next { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-family: 'Bungee', cursive; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #9a3412; }
+  </style>
+</head>
+<body>
+  <div id="gameWrapper">
+    <div class="hud">
+      <div class="hud-pill" id="lvlText">NIVEL 1</div>
+      <div class="hud-pill" style="border-color: #38bdf8; color: #38bdf8;">⏱️ TIEMPO: <span id="timerText">0.0s</span></div>
+    </div>
+    <canvas id="motoCanvas"></canvas>
+    <div class="touch-bar">
+      <div class="touch-grp">
+        <button class="t-btn" id="btnTiltL">↺</button>
+        <button class="t-btn" id="btnTiltR">↻</button>
+      </div>
+      <div class="touch-grp">
+        <button class="t-btn" style="background: rgba(239, 68, 68, 0.8);" id="btnBrake">▼</button>
+        <button class="t-btn" style="background: rgba(16, 185, 129, 0.8); width: 72px; height: 72px;" id="btnGas">GAS</button>
+      </div>
+    </div>
+    <div class="win-screen hidden" id="winScreen">
+      <h1 style="font-size: 38px; color: #f59e0b; text-shadow: 0 0 25px rgba(245, 158, 11, 0.8);">🏁 ¡NIVEL COMPLETADO! 🏁</h1>
+      <p style="font-family: 'Outfit', sans-serif; font-size: 20px; color: #94a3b8;">Tiempo: <strong id="winTime" style="color: #38bdf8;">0.0s</strong></p>
+      <button class="btn-next" id="btnNextLvl">SIGUIENTE NIVEL ▶</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true, onOrientationChange: () => resize() });
+
+    const canvas = document.getElementById('motoCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let curLvl = 1;
+    let time = 0;
+    let timerInterval = null;
+    let gameOver = false;
+
+    // Físicas de la moto
+    let bike = {
+      x: 100, y: 300,
+      vx: 0, vy: 0,
+      angle: 0,
+      angVel: 0,
+      grounded: false
+    };
+
+    let terrain = [];
+    let keys = {};
+    let touch = { gas: false, brake: false, left: false, right: false };
+
+    window.addEventListener('keydown', e => { keys[e.code] = true; });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    const bindT = (id, k) => {
+      const el = document.getElementById(id);
+      el.addEventListener('touchstart', (e) => { e.preventDefault(); touch[k] = true; });
+      el.addEventListener('touchend', (e) => { e.preventDefault(); touch[k] = false; });
+      el.addEventListener('mousedown', () => touch[k] = true);
+      el.addEventListener('mouseup', () => touch[k] = false);
+    };
+    bindT('btnGas', 'gas');
+    bindT('btnBrake', 'brake');
+    bindT('btnTiltL', 'left');
+    bindT('btnTiltR', 'right');
+
+    function buildLevel(lvl) {
+      terrain = [];
+      let x = 0, y = 400;
+      for (let i = 0; i < 120; i++) {
+        terrain.push({ x, y });
+        x += 60;
+        if (i > 10 && i < 25) y = 400 - Math.sin((i - 10) * 0.4) * 140; // Rampa salto
+        else if (i > 35 && i < 50) y = 400 + Math.sin((i - 35) * 0.4) * 80; // Valle
+        else if (i > 60 && i < 80) y = 350 - Math.sin((i - 60) * 0.5) * 160; // Mega Rampa
+        else y = 400 + (Math.sin(i * 0.3) * 30);
+      }
+      bike.x = 100;
+      bike.y = 300;
+      bike.vx = 0;
+      bike.vy = 0;
+      bike.angle = 0;
+      bike.angVel = 0;
+      time = 0;
+      gameOver = false;
+      document.getElementById('winScreen').classList.add('hidden');
+    }
+
+    document.getElementById('btnNextLvl').addEventListener('click', () => {
+      curLvl++;
+      document.getElementById('lvlText').textContent = `NIVEL ${curLvl}`;
+      buildLevel(curLvl);
+    });
+
+    function getTerrainY(x) {
+      for (let i = 0; i < terrain.length - 1; i++) {
+        if (x >= terrain[i].x && x <= terrain[i + 1].x) {
+          const t = (x - terrain[i].x) / (terrain[i + 1].x - terrain[i].x);
+          return terrain[i].y + t * (terrain[i + 1].y - terrain[i].y);
+        }
+      }
+      return 500;
+    }
+
+    function getTerrainSlope(x) {
+      for (let i = 0; i < terrain.length - 1; i++) {
+        if (x >= terrain[i].x && x <= terrain[i + 1].x) {
+          return Math.atan2(terrain[i + 1].y - terrain[i].y, terrain[i + 1].x - terrain[i].x);
+        }
+      }
+      return 0;
+    }
+
+    function update() {
+      if (gameOver) return;
+      time += 1 / 60;
+      document.getElementById('timerText').textContent = time.toFixed(1) + 's';
+
+      const isGas = keys['ArrowUp'] || keys['KeyW'] || touch.gas;
+      const isBrake = keys['ArrowDown'] || keys['KeyS'] || touch.brake;
+      const isLeft = keys['ArrowLeft'] || keys['KeyA'] || touch.left;
+      const isRight = keys['ArrowRight'] || keys['KeyD'] || touch.right;
+
+      // Físicas
+      bike.vy += 0.45; // Gravedad
+      bike.x += bike.vx;
+      bike.y += bike.vy;
+      bike.angle += bike.angVel;
+      bike.angVel *= 0.92;
+
+      // Acelerar en tierra
+      const groundY = getTerrainY(bike.x);
+      const slope = getTerrainSlope(bike.x);
+
+      if (bike.y + 18 >= groundY) {
+        bike.y = groundY - 18;
+        bike.vy = 0;
+        bike.grounded = true;
+
+        // Alinear ángulo con el terreno
+        bike.angle += (slope - bike.angle) * 0.15;
+
+        if (isGas) {
+          bike.vx += Math.cos(slope) * 0.45;
+          bike.vy += Math.sin(slope) * 0.45;
+        }
+        if (isBrake) bike.vx *= 0.94;
+        bike.vx *= 0.985;
+      } else {
+        bike.grounded = false;
+        // Inclinación en el aire
+        if (isLeft) bike.angVel -= 0.008;
+        if (isRight) bike.angVel += 0.008;
+      }
+
+      // Meta al final
+      if (bike.x > terrain[terrain.length - 1].x - 300 && !gameOver) {
+        gameOver = true;
+        document.getElementById('winTime').textContent = time.toFixed(1) + 's';
+        document.getElementById('winScreen').classList.remove('hidden');
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Cámara siguiendo la moto
+      const camX = bike.x - width * 0.35;
+      const camY = bike.y - height * 0.55;
+
+      ctx.save();
+      ctx.translate(-camX, -camY);
+
+      // 1. Terreno con montañas
+      ctx.fillStyle = '#15803d';
+      ctx.beginPath();
+      ctx.moveTo(terrain[0].x, height + 1000);
+      terrain.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(terrain[terrain.length - 1].x, height + 1000);
+      ctx.closePath();
+      ctx.fill();
+
+      // Borde del terreno
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+
+      // 2. Línea de Meta (Bandera a cuadros)
+      const finishX = terrain[terrain.length - 1].x - 300;
+      const finishY = getTerrainY(finishX);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(finishX, finishY - 80, 10, 80);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(finishX + 10, finishY - 80, 40, 30);
+
+      // 3. Dibujar Moto y Piloto
+      ctx.save();
+      ctx.translate(bike.x, bike.y);
+      ctx.rotate(bike.angle);
+
+      // Ruedas
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 4;
+      // Rueda delantera
+      ctx.beginPath(); ctx.arc(22, 14, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      // Rueda trasera
+      ctx.beginPath(); ctx.arc(-22, 14, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+      // Cuadro de la moto
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-22, 14);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(22, 14);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(10, -10);
+      ctx.stroke();
+
+      // Piloto
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath(); ctx.arc(0, -22, 9, 0, Math.PI * 2); ctx.fill(); // Casco
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(-8, 0); ctx.lineTo(10, -10); ctx.stroke();
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    buildLevel(1);
+    loop();
+  </script>
+</body>
+</html>

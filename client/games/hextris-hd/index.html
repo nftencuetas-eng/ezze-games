@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hextris Hexagonal HD - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    canvas { display: block; background: #0f172a; }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #06b6d4; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #06b6d4; }
+    /* Touch controls */
+    .touch-controls { position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; z-index: 20; pointer-events: none; }
+    .btn-rot { width: 72px; height: 72px; border-radius: 50%; background: rgba(15, 23, 42, 0.8); border: 3px solid #06b6d4; color: #fff; font-size: 26px; font-family: 'Bungee'; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+    .btn-rot:active { background: #06b6d4; transform: scale(0.92); }
+    .gameover-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+    .gameover-screen.hidden { display: none; }
+    .btn-play { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; font-family: 'Bungee', cursive; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #0e7490; }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box">PUNTOS: <span id="scoreText">0</span></div>
+      <div class="hud-box" style="border-color: #f59e0b; color: #f59e0b;">RÉCORD: <span id="bestText">0</span></div>
+    </div>
+    <canvas id="hexCanvas" width="500" height="500"></canvas>
+    <div class="touch-controls">
+      <button class="btn-rot" id="btnRotL">↺</button>
+      <button class="btn-rot" id="btnRotR">↻</button>
+    </div>
+    <div class="gameover-screen hidden" id="gameOver">
+      <h1 style="font-size: 38px; color: #ef4444; text-shadow: 0 0 25px rgba(239, 68, 68, 0.8);">¡BLOQUES LLENOS!</h1>
+      <p style="font-family: 'Outfit', sans-serif; font-size: 18px; color: #94a3b8;">Puntuación final: <strong id="finalScore" style="color: #06b6d4;">0</strong></p>
+      <button class="btn-play" id="btnRestart">JUGAR DE NUEVO 🔄</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true });
+
+    const canvas = document.getElementById('hexCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
+    let rotation = 0; // 0 a 5 lados
+    let stacks = [[], [], [], [], [], []]; // 6 lados
+    let fallingBlocks = [];
+    let score = 0;
+    let best = parseInt(localStorage.getItem('hextris_best') || '0');
+    document.getElementById('bestText').textContent = best;
+    let gameOver = false;
+    let spawnTimer = 0;
+
+    function initGame() {
+      rotation = 0;
+      stacks = [[], [], [], [], [], []];
+      fallingBlocks = [];
+      score = 0;
+      gameOver = false;
+      document.getElementById('scoreText').textContent = '0';
+      document.getElementById('gameOver').classList.add('hidden');
+    }
+
+    function rotateHex(dir) {
+      if (gameOver) return;
+      rotation = (rotation + dir + 6) % 6;
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') rotateHex(-1);
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') rotateHex(1);
+    });
+
+    document.getElementById('btnRotL').addEventListener('click', () => rotateHex(-1));
+    document.getElementById('btnRotR').addEventListener('click', () => rotateHex(1));
+    document.getElementById('btnRestart').addEventListener('click', initGame);
+
+    function spawnBlock() {
+      const side = Math.floor(Math.random() * 6);
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      fallingBlocks.push({ side, color, dist: 220 });
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      spawnTimer++;
+      if (spawnTimer % 55 === 0) spawnBlock();
+
+      for (let i = fallingBlocks.length - 1; i >= 0; i--) {
+        const b = fallingBlocks[i];
+        b.dist -= 2.2;
+
+        // Lado efectivo respecto a la rotación
+        const effSide = (b.side - rotation + 6) % 6;
+        const curStack = stacks[effSide];
+        const stackHeight = curStack.length * 16 + 50;
+
+        if (b.dist <= stackHeight) {
+          curStack.push(b.color);
+          fallingBlocks.splice(i, 1);
+          checkCombos(effSide);
+
+          if (curStack.length >= 8) {
+            triggerGameOver();
+          }
+        }
+      }
+    }
+
+    function checkCombos(side) {
+      const stack = stacks[side];
+      if (stack.length >= 3) {
+        const last = stack[stack.length - 1];
+        let matchCount = 1;
+        for (let i = stack.length - 2; i >= 0; i--) {
+          if (stack[i] === last) matchCount++;
+          else break;
+        }
+
+        if (matchCount >= 3) {
+          stack.splice(stack.length - matchCount, matchCount);
+          score += matchCount * 100;
+          document.getElementById('scoreText').textContent = score;
+        }
+      }
+    }
+
+    function triggerGameOver() {
+      gameOver = true;
+      if (score > best) {
+        best = score;
+        localStorage.setItem('hextris_best', best);
+        document.getElementById('bestText').textContent = best;
+      }
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('gameOver').classList.remove('hidden');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((rotation * Math.PI) / 3);
+
+      // Dibujar hexágono central
+      ctx.fillStyle = '#06b6d4';
+      drawHex(0, 0, 45);
+      ctx.fill();
+
+      // Dibujar bloques acumulados en los 6 lados
+      for (let s = 0; s < 6; s++) {
+        const angle = (s * Math.PI) / 3;
+        ctx.save();
+        ctx.rotate(angle);
+
+        stacks[s].forEach((col, idx) => {
+          ctx.fillStyle = col;
+          ctx.fillRect(-22, 45 + idx * 16, 44, 13);
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+          ctx.strokeRect(-22, 45 + idx * 16, 44, 13);
+        });
+
+        ctx.restore();
+      }
+
+      // Dibujar bloques que caen
+      fallingBlocks.forEach(b => {
+        const angle = (b.side * Math.PI) / 3;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.fillStyle = b.color;
+        ctx.fillRect(-22, b.dist, 44, 14);
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    function drawHex(x, y, r) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3;
+        const px = x + Math.cos(a) * r;
+        const py = y + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    initGame();
+    loop();
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pac-Man Arcade Championship - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #000; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    canvas { display: block; background: #000; border: 3px solid #1e3a8a; border-radius: 12px; }
+    .hud { position: absolute; top: 12px; left: 24px; right: 24px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { font-size: 18px; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.6); }
+    /* Mobile D-Pad */
+    .touch-dpad { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 54px); gap: 6px; z-index: 20; }
+    .d-btn { background: rgba(30, 41, 59, 0.85); border: 2px solid #3b82f6; color: #fff; font-size: 20px; font-family: 'Bungee'; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .d-btn:active { background: #facc15; color: #000; }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box">PUNTOS: <span id="scoreText">0</span></div>
+      <div class="hud-box">VIDAS: <span id="livesText">💛💛💛</span></div>
+    </div>
+    <canvas id="pacCanvas" width="460" height="460"></canvas>
+    <div class="touch-dpad">
+      <div></div><button class="d-btn" id="btnUp">▲</button><div></div>
+      <button class="d-btn" id="btnLeft">◀</button><div></div><button class="d-btn" id="btnRight">▶</button>
+      <div></div><button class="d-btn" id="btnDown">▼</button><div></div>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true });
+
+    const canvas = document.getElementById('pacCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const GRID = 20;
+    const ROWS = 23;
+    const COLS = 23;
+
+    // Mapa clásico simplificado (1=muro, 0=punto, 2=energizador, 3=vacío)
+    const MAP = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,2,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,2,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+      [1,1,1,1,1,0,1,1,1,1,3,1,3,1,1,1,1,0,1,1,1,1,1],
+      [3,3,3,3,1,0,1,3,3,3,3,3,3,3,3,3,1,0,1,3,3,3,3],
+      [1,1,1,1,1,0,1,3,1,1,3,3,3,1,1,3,1,0,1,1,1,1,1],
+      [3,3,3,3,3,0,3,3,1,3,3,3,3,3,1,3,3,0,3,3,3,3,3],
+      [1,1,1,1,1,0,1,3,1,1,1,1,1,1,1,3,1,0,1,1,1,1,1],
+      [3,3,3,3,1,0,1,3,3,3,3,3,3,3,3,3,1,0,1,3,3,3,3],
+      [1,1,1,1,1,0,1,3,1,1,1,1,1,1,1,3,1,0,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,2,0,0,1,0,0,0,0,0,0,3,0,0,0,0,0,0,1,0,0,2,1],
+      [1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1],
+      [1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    let grid = JSON.parse(JSON.stringify(MAP));
+    let score = 0;
+    let lives = 3;
+    let pacman = { r: 16, c: 11, dirR: 0, dirC: 0, nextDirR: 0, nextDirC: 0, mouth: 0.2 };
+    let ghosts = [
+      { r: 9, c: 10, color: '#ef4444', dirR: -1, dirC: 0 },
+      { r: 9, c: 11, color: '#ec4899', dirR: 1, dirC: 0 },
+      { r: 9, c: 12, color: '#38bdf8', dirR: 0, dirC: 1 },
+      { r: 8, c: 11, color: '#f59e0b', dirR: 0, dirC: -1 }
+    ];
+
+    function setDir(dr, dc) {
+      pacman.nextDirR = dr;
+      pacman.nextDirC = dc;
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') setDir(-1, 0);
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') setDir(1, 0);
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') setDir(0, -1);
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') setDir(0, 1);
+    });
+
+    const bindD = (id, dr, dc) => {
+      document.getElementById(id).addEventListener('click', () => setDir(dr, dc));
+    };
+    bindD('btnUp', -1, 0);
+    bindD('btnDown', 1, 0);
+    bindD('btnLeft', 0, -1);
+    bindD('btnRight', 0, 1);
+
+    let tick = 0;
+    function update() {
+      tick++;
+      if (tick % 8 !== 0) return;
+
+      // Movimiento de Pac-Man
+      const nr = pacman.r + pacman.nextDirR;
+      const nc = pacman.c + pacman.nextDirC;
+      if (grid[nr] && grid[nr][nc] !== 1) {
+        pacman.dirR = pacman.nextDirR;
+        pacman.dirC = pacman.nextDirC;
+      }
+
+      const targetR = pacman.r + pacman.dirR;
+      const targetC = pacman.c + pacman.dirC;
+
+      if (grid[targetR] && grid[targetR][targetC] !== 1) {
+        pacman.r = targetR;
+        pacman.c = targetC;
+
+        // Comer puntos
+        if (grid[pacman.r][pacman.c] === 0) {
+          grid[pacman.r][pacman.c] = 3;
+          score += 10;
+          document.getElementById('scoreText').textContent = score;
+        } else if (grid[pacman.r][pacman.c] === 2) {
+          grid[pacman.r][pacman.c] = 3;
+          score += 50;
+          document.getElementById('scoreText').textContent = score;
+        }
+      }
+
+      // Movimiento de Fantasmas
+      ghosts.forEach(g => {
+        const dirs = [
+          { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+          { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+        ].filter(d => grid[g.r + d.dr] && grid[g.r + d.dr][g.c + d.dc] !== 1);
+
+        if (dirs.length > 0) {
+          const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+          g.r += chosen.dr;
+          g.c += chosen.dc;
+        }
+
+        // Colisión con Pac-Man
+        if (g.r === pacman.r && g.c === pacman.c) {
+          lives--;
+          document.getElementById('livesText').textContent = '💛'.repeat(Math.max(0, lives));
+          pacman.r = 16;
+          pacman.c = 11;
+          if (lives <= 0) {
+            alert('¡Fin de la partida! Puntuación: ' + score);
+            lives = 3;
+            score = 0;
+            grid = JSON.parse(JSON.stringify(MAP));
+            document.getElementById('scoreText').textContent = '0';
+            document.getElementById('livesText').textContent = '💛💛💛';
+          }
+        }
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Dibujar laberinto
+      for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[r].length; c++) {
+          const x = c * GRID;
+          const y = r * GRID;
+          const cell = grid[r][c];
+
+          if (cell === 1) {
+            ctx.fillStyle = '#1d4ed8';
+            ctx.fillRect(x, y, GRID, GRID);
+            ctx.strokeStyle = '#1e3a8a';
+            ctx.strokeRect(x, y, GRID, GRID);
+          } else if (cell === 0) {
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(x + GRID / 2, y + GRID / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (cell === 2) {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x + GRID / 2, y + GRID / 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Dibujar Pac-Man
+      const px = pacman.c * GRID + GRID / 2;
+      const py = pacman.r * GRID + GRID / 2;
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(px, py, 9, 0.25 * Math.PI, 1.75 * Math.PI);
+      ctx.lineTo(px, py);
+      ctx.fill();
+
+      // Dibujar Fantasmas
+      ghosts.forEach(g => {
+        const gx = g.c * GRID + GRID / 2;
+        const gy = g.r * GRID + GRID / 2;
+        ctx.fillStyle = g.color;
+        ctx.beginPath();
+        ctx.arc(gx, gy - 2, 8, Math.PI, 0);
+        ctx.lineTo(gx + 8, gy + 8);
+        ctx.lineTo(gx - 8, gy + 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ojos
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(gx - 3, gy - 2, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(gx + 3, gy - 2, 2.5, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>

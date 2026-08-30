@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Zombie Derby: Supervivencia - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #b91c1c 0%, #450a0a 60%, #1c1917 100%); }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #10b981; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #10b981; }
+    /* Touch Gas Button */
+    .touch-btn { position: absolute; bottom: 20px; right: 20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(16, 185, 129, 0.85); border: 3px solid #fff; color: #fff; font-size: 20px; font-family: 'Bungee'; display: flex; align-items: center; justify-content: center; z-index: 20; }
+    .touch-btn:active { background: #059669; transform: scale(0.92); }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box">DISTANCIA: <span id="distText">0</span>m</div>
+      <div class="hud-box" style="border-color: #ef4444; color: #ef4444;">🧟 ZOMBIES: <span id="zombieText">0</span></div>
+      <div class="hud-box" style="border-color: #f59e0b; color: #f59e0b;">⛽ GASOLINA: <span id="fuelText">100%</span></div>
+    </div>
+    <canvas id="zombieCanvas"></canvas>
+    <button class="touch-btn" id="btnGas">GAS</button>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true, onOrientationChange: () => resize() });
+
+    const canvas = document.getElementById('zombieCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let truck = { x: 100, y: 380, vx: 0, fuel: 100 };
+    let zombies = [];
+    let distance = 0;
+    let kills = 0;
+    let isGas = false;
+
+    function initGame() {
+      truck = { x: 100, y: height * 0.72, vx: 0, fuel: 100 };
+      distance = 0;
+      kills = 0;
+      zombies = [];
+      for (let i = 1; i <= 20; i++) {
+        zombies.push({ x: 300 + i * 200, dead: false });
+      }
+    }
+
+    window.addEventListener('keydown', e => { if (e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'Space') isGas = true; });
+    window.addEventListener('keyup', () => isGas = false);
+
+    const gasBtn = document.getElementById('btnGas');
+    gasBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isGas = true; });
+    gasBtn.addEventListener('touchend', (e) => { e.preventDefault(); isGas = false; });
+    gasBtn.addEventListener('mousedown', () => isGas = true);
+    gasBtn.addEventListener('mouseup', () => isGas = false);
+
+    function update() {
+      if (isGas && truck.fuel > 0) {
+        truck.vx = Math.min(12, truck.vx + 0.3);
+        truck.fuel -= 0.12;
+      } else {
+        truck.vx *= 0.985;
+      }
+
+      truck.x += truck.vx;
+      distance = Math.floor(truck.x / 10);
+      document.getElementById('distText').textContent = distance;
+      document.getElementById('fuelText').textContent = Math.max(0, Math.floor(truck.fuel)) + '%';
+
+      // Atropellar zombies
+      zombies.forEach(z => {
+        if (!z.dead && Math.abs(truck.x - z.x) < 40) {
+          z.dead = true;
+          kills++;
+          document.getElementById('zombieText').textContent = kills;
+        }
+      });
+
+      if (truck.fuel <= 0 && truck.vx < 0.1) {
+        alert('¡Te quedaste sin gasolina! Recorriste ' + distance + 'm y eliminaste ' + kills + ' zombies.');
+        initGame();
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      const groundY = height * 0.75;
+
+      ctx.save();
+      ctx.translate(width * 0.25 - truck.x, 0);
+
+      // Suelo desértico apocalíptico
+      ctx.fillStyle = '#292524';
+      ctx.fillRect(-1000, groundY, truck.x + 5000, height - groundY);
+      ctx.strokeStyle = '#44403c'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(-1000, groundY); ctx.lineTo(truck.x + 5000, groundY); ctx.stroke();
+
+      // Zombies
+      zombies.forEach(z => {
+        if (!z.dead) {
+          ctx.fillStyle = '#15803d';
+          ctx.fillRect(z.x - 10, groundY - 45, 20, 45); // Cuerpo
+          ctx.fillStyle = '#86efac';
+          ctx.fillRect(z.x - 8, groundY - 40, 16, 12); // Cabeza
+        }
+      });
+
+      // Camión Blindado
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(truck.x - 40, groundY - 35, 80, 35); // Carrocería
+      ctx.fillStyle = '#064e3b';
+      ctx.fillRect(truck.x - 20, groundY - 48, 40, 15); // Techo
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(truck.x + 35, groundY - 30, 12, 30); // Parachoques con pinchos
+
+      // Ruedas gigantes
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(truck.x - 24, groundY, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(truck.x + 24, groundY, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    initGame();
+    loop();
+  </script>
+</body>
+</html>

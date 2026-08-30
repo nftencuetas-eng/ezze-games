@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Stickman Hook Pro - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #gameWrapper { position: relative; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; background: #1e293b; }
+    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #ec4899; padding: 8px 18px; border-radius: 14px; font-size: 16px; color: #ec4899; }
+    .win-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+    .win-screen.hidden { display: none; }
+    .btn-next { background: linear-gradient(135deg, #ec4899, #be185d); color: #fff; font-family: 'Bungee', cursive; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #9d174d; }
+  </style>
+</head>
+<body>
+  <div id="gameWrapper">
+    <div class="hud">
+      <div class="hud-box" id="lvlBox">NIVEL 1</div>
+      <div class="hud-box" style="border-color: #38bdf8; color: #38bdf8;">MANTÉN PULSADO PARA ENGANCHAR 🪝</div>
+    </div>
+    <canvas id="stickCanvas"></canvas>
+    <div class="win-screen hidden" id="winModal">
+      <h1 style="font-size: 38px; color: #ec4899; text-shadow: 0 0 25px rgba(236, 72, 153, 0.8);">🎉 ¡NIVEL COMPLETADO! 🎉</h1>
+      <button class="btn-next" id="btnNext">SIGUIENTE NIVEL ▶</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true, onOrientationChange: () => resize() });
+
+    const canvas = document.getElementById('stickCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let level = 1;
+    let isHooked = false;
+    let hookPoint = null;
+    let hookLength = 0;
+    let gameOver = false;
+
+    let player = {
+      x: 100, y: 200,
+      vx: 6, vy: 0,
+      r: 15
+    };
+
+    let pins = [];
+    let pads = [];
+    let finishX = 2500;
+
+    function buildLevel(lvl) {
+      player = { x: 100, y: 200, vx: 5.5, vy: 0, r: 15 };
+      pins = [];
+      pads = [];
+      finishX = 1800 + lvl * 400;
+
+      for (let x = 300; x < finishX - 200; x += 320) {
+        pins.push({ x, y: 140 + (Math.sin(x) * 60) });
+      }
+
+      for (let x = 500; x < finishX - 300; x += 450) {
+        pads.push({ x, y: 480, w: 100, h: 20 });
+      }
+
+      isHooked = false;
+      hookPoint = null;
+      gameOver = false;
+      document.getElementById('winModal').classList.add('hidden');
+      document.getElementById('lvlBox').textContent = `NIVEL ${lvl}`;
+    }
+
+    const startHook = () => {
+      if (gameOver) return;
+      // Buscar el gancho más cercano adelante
+      let closest = null;
+      let minDist = 9999;
+      pins.forEach(p => {
+        const d = Math.hypot(p.x - player.x, p.y - player.y);
+        if (p.x > player.x - 50 && d < minDist) {
+          minDist = d;
+          closest = p;
+        }
+      });
+
+      if (closest && minDist < 380) {
+        isHooked = true;
+        hookPoint = closest;
+        hookLength = minDist;
+      }
+    };
+
+    const endHook = () => {
+      isHooked = false;
+      hookPoint = null;
+    };
+
+    window.addEventListener('mousedown', startHook);
+    window.addEventListener('mouseup', endHook);
+    window.addEventListener('touchstart', (e) => { e.preventDefault(); startHook(); });
+    window.addEventListener('touchend', (e) => { e.preventDefault(); endHook(); });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      level++;
+      buildLevel(level);
+    });
+
+    function update() {
+      if (gameOver) return;
+
+      const GRAV = 0.35;
+
+      if (isHooked && hookPoint) {
+        // Físicas pendulares de cuerda
+        const dx = player.x - hookPoint.x;
+        const dy = player.y - hookPoint.y;
+        const curDist = Math.hypot(dx, dy);
+
+        // Vector perpendicular
+        let angle = Math.atan2(dy, dx);
+        let angVel = (-player.vx * Math.sin(angle) + player.vy * Math.cos(angle)) / hookLength;
+
+        // Gravedad tangencial
+        angVel += (-GRAV * Math.sin(angle)) * 0.05;
+        angle += angVel;
+
+        player.x = hookPoint.x + Math.cos(angle) * hookLength;
+        player.y = hookPoint.y + Math.sin(angle) * hookLength;
+
+        player.vx = -angVel * hookLength * Math.sin(angle);
+        player.vy = angVel * hookLength * Math.cos(angle);
+      } else {
+        // Vuelo libre
+        player.vy += GRAV;
+        player.x += player.vx;
+        player.y += player.vy;
+      }
+
+      // Colisión con trampolines (Pads)
+      pads.forEach(pad => {
+        if (
+          player.x + player.r > pad.x &&
+          player.x - player.r < pad.x + pad.w &&
+          player.y + player.r > pad.y &&
+          player.y - player.r < pad.y + pad.h &&
+          player.vy > 0
+        ) {
+          player.vy = -16;
+          player.vx = Math.max(7, player.vx * 1.2);
+        }
+      });
+
+      // Caída al vacío (Reiniciar)
+      if (player.y > height + 200) {
+        buildLevel(level);
+      }
+
+      // Meta
+      if (player.x > finishX) {
+        gameOver = true;
+        document.getElementById('winModal').classList.remove('hidden');
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      const camX = player.x - width * 0.3;
+      const camY = player.y - height * 0.5;
+
+      ctx.save();
+      ctx.translate(-camX, -camY);
+
+      // Líneas de fondo
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 2;
+      for (let x = 0; x < finishX + 500; x += 80) {
+        ctx.beginPath(); ctx.moveTo(x, -500); ctx.lineTo(x, 1500); ctx.stroke();
+      }
+
+      // Trampolines
+      pads.forEach(pad => {
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(pad.x, pad.y, pad.w, pad.h);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(pad.x, pad.y, pad.w, pad.h);
+      });
+
+      // Puntos de gancho
+      pins.forEach(p => {
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+      });
+
+      // Cuerda
+      if (isHooked && hookPoint) {
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(hookPoint.x, hookPoint.y);
+        ctx.lineTo(player.x, player.y);
+        ctx.stroke();
+      }
+
+      // Meta
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(finishX, -500, 30, 2000);
+
+      // Personaje Stickman
+      ctx.fillStyle = '#ec4899';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    buildLevel(1);
+    loop();
+  </script>
+</body>
+</html>

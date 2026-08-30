@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tower Defense Kingdom - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/orientation.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    body { background: #0f172a; color: #fff; font-family: 'Bungee', sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #canvasContainer { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    canvas { display: block; background: #15803d; border: 3px solid #d97706; border-radius: 14px; cursor: crosshair; }
+    .hud { position: absolute; top: 12px; left: 24px; right: 24px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+    .hud-box { background: rgba(15, 23, 42, 0.85); border: 2px solid #d97706; padding: 6px 16px; border-radius: 12px; font-size: 15px; color: #d97706; }
+    .tower-bar { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; background: rgba(15, 23, 42, 0.85); padding: 8px 16px; border-radius: 16px; border: 2px solid #64748b; z-index: 20; }
+    .t-btn { background: #334155; border: 2px solid #f59e0b; color: #fff; font-family: 'Bungee'; padding: 6px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+    .t-btn:hover { background: #f59e0b; color: #000; }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <div class="hud">
+      <div class="hud-box">🪙 ORO: <span id="goldText">150</span></div>
+      <div class="hud-box" style="border-color: #ef4444; color: #ef4444;">❤️ VIDAS: <span id="hpText">20</span></div>
+      <div class="hud-box" style="border-color: #38bdf8; color: #38bdf8;">OLEADA: <span id="waveText">1</span></div>
+    </div>
+    <canvas id="tdCanvas" width="700" height="420"></canvas>
+    <div class="tower-bar">
+      <button class="t-btn" id="btnBuyArcher">🏹 ARQUERO (100g)</button>
+      <button class="t-btn" id="btnBuyCannon">💣 CAÑÓN (150g)</button>
+    </div>
+  </div>
+
+  <script src="../../js/orientation.js"></script>
+  <script>
+    new OrientationLock({ requiresLandscape: true });
+
+    const canvas = document.getElementById('tdCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const PATH = [
+      { x: 0, y: 120 }, { x: 220, y: 120 },
+      { x: 220, y: 300 }, { x: 480, y: 300 },
+      { x: 480, y: 120 }, { x: 700, y: 120 }
+    ];
+
+    let gold = 150;
+    let hp = 20;
+    let wave = 1;
+    let towers = [];
+    let enemies = [];
+    let bullets = [];
+    let selectedTowerType = 'archer';
+
+    document.getElementById('btnBuyArcher').addEventListener('click', () => selectedTowerType = 'archer');
+    document.getElementById('btnBuyCannon').addEventListener('click', () => selectedTowerType = 'cannon');
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const cost = selectedTowerType === 'archer' ? 100 : 150;
+      if (gold >= cost) {
+        gold -= cost;
+        document.getElementById('goldText').textContent = gold;
+        towers.push({
+          x, y,
+          type: selectedTowerType,
+          range: selectedTowerType === 'archer' ? 140 : 100,
+          cd: 0,
+          rate: selectedTowerType === 'archer' ? 30 : 60,
+          dmg: selectedTowerType === 'archer' ? 15 : 45
+        });
+      }
+    });
+
+    let spawnTick = 0;
+    function update() {
+      spawnTick++;
+      if (spawnTick % 60 === 0 && enemies.length < wave * 6) {
+        enemies.push({
+          pathIdx: 0,
+          x: PATH[0].x, y: PATH[0].y,
+          hp: 40 + wave * 15,
+          maxHp: 40 + wave * 15,
+          speed: 1.8,
+          dead: false
+        });
+      }
+
+      // Mover enemigos
+      enemies.forEach(en => {
+        const target = PATH[en.pathIdx + 1];
+        if (target) {
+          const dx = target.x - en.x;
+          const dy = target.y - en.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < en.speed) {
+            en.pathIdx++;
+          } else {
+            en.x += (dx / dist) * en.speed;
+            en.y += (dy / dist) * en.speed;
+          }
+        } else {
+          // Llegó a la base
+          en.dead = true;
+          hp--;
+          document.getElementById('hpText').textContent = hp;
+          if (hp <= 0) {
+            alert('¡El reino ha caído!');
+            location.reload();
+          }
+        }
+      });
+
+      // Torres disparan
+      towers.forEach(t => {
+        t.cd--;
+        if (t.cd <= 0) {
+          const target = enemies.find(en => !en.dead && Math.hypot(en.x - t.x, en.y - t.y) < t.range);
+          if (target) {
+            t.cd = t.rate;
+            bullets.push({
+              x: t.x, y: t.y,
+              tx: target.x, ty: target.y,
+              target, dmg: t.dmg,
+              life: 15
+            });
+          }
+        }
+      });
+
+      // Mover proyectiles
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        const dx = b.tx - b.x;
+        const dy = b.ty - b.y;
+        b.x += dx * 0.25;
+        b.y += dy * 0.25;
+        b.life--;
+
+        if (b.life <= 0) {
+          if (b.target && !b.target.dead) {
+            b.target.hp -= b.dmg;
+            if (b.target.hp <= 0) {
+              b.target.dead = true;
+              gold += 25;
+              document.getElementById('goldText').textContent = gold;
+            }
+          }
+          bullets.splice(i, 1);
+        }
+      }
+
+      enemies = enemies.filter(en => !en.dead);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Camino de tierra
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 45;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(PATH[0].x, PATH[0].y);
+      for (let i = 1; i < PATH.length; i++) ctx.lineTo(PATH[i].x, PATH[i].y);
+      ctx.stroke();
+
+      // 2. Torres
+      towers.forEach(t => {
+        // Base
+        ctx.fillStyle = '#475569';
+        ctx.beginPath(); ctx.arc(t.x, t.y, 18, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
+
+        // Cañón / Torreta
+        ctx.fillStyle = t.type === 'archer' ? '#38bdf8' : '#ef4444';
+        ctx.beginPath(); ctx.arc(t.x, t.y, 10, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // 3. Enemigos
+      enemies.forEach(en => {
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath(); ctx.arc(en.x, en.y, 12, 0, Math.PI * 2); ctx.fill();
+
+        // Barra de vida
+        ctx.fillStyle = '#000';
+        ctx.fillRect(en.x - 14, en.y - 20, 28, 5);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(en.x - 14, en.y - 20, (en.hp / en.maxHp) * 28, 5);
+      });
+
+      // 4. Proyectiles
+      bullets.forEach(b => {
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>

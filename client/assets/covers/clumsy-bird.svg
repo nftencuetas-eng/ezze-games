@@ -2,28 +2,13 @@
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0284c7" />
-      <stop offset="60%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#bae6fd" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#7dd3fc" />
     </linearGradient>
-    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef08a" />
-      <stop offset="100%" stop-color="#eab308" />
-    </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <!-- Pipes -->
-  <rect x="220" y="0" width="120" height="260" fill="#22c55e" stroke="#15803d" stroke-width="8"/>
-  <rect x="200" y="220" width="160" height="50" fill="#22c55e" stroke="#15803d" stroke-width="8"/>
-  <rect x="940" y="440" width="120" height="280" fill="#22c55e" stroke="#15803d" stroke-width="8"/>
-  <rect x="920" y="440" width="160" height="50" fill="#22c55e" stroke="#15803d" stroke-width="8"/>
-  <!-- Bird -->
-  <circle cx="640" cy="300" r="70" fill="url(#gold)" stroke="#000" stroke-width="8" filter="url(#glow)"/>
-  <circle cx="670" cy="275" r="22" fill="#fff" stroke="#000" stroke-width="6"/>
-  <circle cx="676" cy="275" r="10" fill="#000"/>
-  <polygon points="690,300 750,315 690,330" fill="#ef4444" stroke="#000" stroke-width="6"/>
-  <!-- Title -->
-  <text x="640" y="480" font-family="'Bungee', sans-serif" font-size="76" font-weight="900" text-anchor="middle" fill="#000" dy="6">CLUMSY BIRD</text>
-  <text x="640" y="480" font-family="'Bungee', sans-serif" font-size="76" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">CLUMSY BIRD</text>
-  <text x="640" y="550" font-family="'Bungee', sans-serif" font-size="32" text-anchor="middle" fill="#fff" letter-spacing="6">FLAP & FLY ADVENTURE</text>
+  <text x="640" y="270" font-size="120" text-anchor="middle">🐦☁️</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="70" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">CLUMSY BIRD HD</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fff" letter-spacing="6">MOTOR MELONJS OFICIAL</text>
 </svg>

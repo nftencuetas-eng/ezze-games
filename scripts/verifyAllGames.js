@@ -1,22 +1,18 @@
 const http = require('http');
 
 const games = [
-  { slug: 'pacman-hd', cover: '/assets/covers/pacman-hd.jpg' },
-  { slug: 'clumsy-bird', cover: '/assets/covers/clumsy-bird.svg' },
-  { slug: 'alien-invasion', cover: '/assets/covers/alien-invasion.svg' },
-  { slug: 'tetris-pro', cover: '/assets/covers/tetris-pro.svg' },
-  { slug: 'snake-classic', cover: '/assets/covers/snake-classic.svg' },
-  { slug: 'astray-3d', cover: '/assets/covers/astray-3d.svg' },
-  { slug: 'puzzle-2048', cover: '/assets/covers/puzzle-2048.svg' },
-  { slug: 'hextris-hd', cover: '/assets/covers/hextris-hd.svg' },
+  { slug: 'math-monsters', cover: '/assets/covers/math-monsters.svg' },
+  { slug: 'memory-safari', cover: '/assets/covers/memory-safari.svg' },
+  { slug: 'quiz-trivia', cover: '/assets/covers/quiz-trivia.svg' },
+  { slug: 'jigsaw-puzzle', cover: '/assets/covers/jigsaw-puzzle.svg' },
   { slug: 'tower-master', cover: '/assets/covers/tower-master.svg' },
-  { slug: 'sandboxels', cover: '/assets/covers/sandboxels.svg' },
-  { slug: 'solitaire-classic', cover: '/assets/covers/solitaire-classic.svg' },
-  { slug: 'minesweeper', cover: '/assets/covers/minesweeper.svg' },
-  { slug: 'hexgl-racing', cover: '/assets/covers/hexgl-racing.svg' },
-  { slug: 'canvas-rider', cover: '/assets/covers/canvas-rider.svg' },
-  { slug: 'chess-master', cover: '/assets/covers/chess-master.svg' },
-  { slug: 'connect-four', cover: '/assets/covers/connect-four.svg' }
+  { slug: 'fruit-slice', cover: '/assets/covers/fruit-slice.svg' },
+  { slug: 'candy-match', cover: '/assets/covers/candy-match.svg' },
+  { slug: 'bubble-shooter', cover: '/assets/covers/bubble-shooter.svg' },
+  { slug: 'clumsy-bird', cover: '/assets/covers/clumsy-bird.svg' },
+  { slug: 'pacman-hd', cover: '/assets/covers/pacman-hd.jpg' },
+  { slug: 'puzzle-2048', cover: '/assets/covers/puzzle-2048.svg' },
+  { slug: 'hexgl-racing', cover: '/assets/covers/hexgl-racing.svg' }
 ];
 
 function checkUrl(path) {
@@ -30,7 +26,7 @@ function checkUrl(path) {
 }
 
 async function run() {
-  console.log('=== VERIFICANDO 16 JUEGOS Y SUS PORTADAS ===');
+  console.log('=== VERIFICANDO LOS 12 MEJORES JUEGOS Y SUS PORTADAS ===');
   let errCount = 0;
   for (const g of games) {
     const gameRes = await checkUrl(`/games/${g.slug}/index.html`);
@@ -39,7 +35,7 @@ async function run() {
     if (!ok) errCount++;
     console.log(`[${ok ? 'OK' : 'FAIL'}] ${g.slug} | Game: ${gameRes.status} | Cover: ${coverRes.status}`);
   }
-  console.log('============================================');
+  console.log('=======================================================');
   console.log(`Total: ${games.length} | Fallos: ${errCount}`);
 }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="50%" stop-color="#312e81" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <text x="640" y="270" font-size="120" text-anchor="middle">🐲</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">MATH MONSTERS</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#818cf8" letter-spacing="6">BATALLA MATEMATICA EDUCATIVA</text>
+</svg>

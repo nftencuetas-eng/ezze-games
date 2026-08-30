@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trivia Escolar & Curiosidades - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: 'Outfit', sans-serif; }
+    body { background: linear-gradient(180deg, #3b0764 0%, #581c87 60%, #7e22ce 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; }
+    .game-box { width: 100%; max-width: 500px; background: rgba(59, 7, 100, 0.85); border: 3px solid #c084fc; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(10px); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+    .stat-badge { background: #581c87; border: 1.5px solid #d8b4fe; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 14px; color: #facc15; }
+    .question-card { background: #1e1b4b; border: 2px solid #a855f7; border-radius: 16px; padding: 20px; text-align: center; font-size: 18px; font-weight: 800; line-height: 1.4; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .category-tag { font-family: 'Bungee'; font-size: 12px; color: #facc15; margin-bottom: 6px; }
+    .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-ans { border: none; color: #fff; font-size: 15px; font-weight: 800; padding: 16px 12px; border-radius: 14px; cursor: pointer; transition: transform 0.1s; text-align: center; }
+    .btn-ans:active { transform: scale(0.96); }
+    .btn-0 { background: #ef4444; }
+    .btn-1 { background: #3b82f6; }
+    .btn-2 { background: #f59e0b; }
+    .btn-3 { background: #10b981; }
+    .overlay { position: fixed; inset: 0; background: rgba(59, 7, 100, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; z-index: 50; }
+    .overlay.hidden { display: none; }
+    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 22px; padding: 14px 40px; border: none; border-radius: 16px; cursor: pointer; box-shadow: 0 6px 0 #ca8a04; }
+  </style>
+</head>
+<body>
+  <div class="game-box">
+    <div class="top-bar">
+      <div class="stat-badge">⭐ PUNTOS: <span id="scoreText">0</span></div>
+      <div class="stat-badge">📝 PREGUNTA: <span id="qCountText">1/10</span></div>
+    </div>
+    <div class="question-card">
+      <div class="category-tag" id="catTag">CIENCIA & PLANETAS</div>
+      <div id="questionText">¿Cuál es el planeta más grande de nuestro sistema solar?</div>
+    </div>
+    <div class="answers-grid" id="answersGrid"></div>
+  </div>
+
+  <div class="overlay" id="startScreen">
+    <h1 style="font-family: 'Bungee'; font-size: 36px; color: #facc15; text-shadow: 0 0 20px rgba(250, 204, 21, 0.6);">TRIVIA ESCOLAR</h1>
+    <p style="font-size: 16px; color: #e9d5ff; max-width: 320px;">¡Pon a prueba tus conocimientos sobre el universo, naturaleza, historia y ciencias!</p>
+    <button class="btn-play" onclick="startGame()">¡COMENZAR QUIZ!</button>
+  </div>
+
+  <div class="overlay hidden" id="gameOverScreen">
+    <h1 style="font-family: 'Bungee'; font-size: 34px; color: #facc15;">🎓 ¡QUIZ FINALIZADO! 🎓</h1>
+    <p style="font-size: 18px; color: #e9d5ff;">Puntuación lograda: <strong id="finalScore" style="color: #4ade80;">0</strong></p>
+    <button class="btn-play" onclick="startGame()">JUGAR OTRA VEZ</button>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      { cat: '🌍 PLANETAS', q: '¿Cuál es el planeta más grande del sistema solar?', opts: ['Marte', 'Júpiter', 'Saturno', 'Tierra'], ans: 1 },
+      { cat: '🦁 NATURALEZA', q: '¿Cuál es el animal terrestre más veloz del mundo?', opts: ['León', 'Guepardo', 'Águila', 'Caballo'], ans: 1 },
+      { cat: '🔬 CIENCIAS', q: '¿Cuántos huesos tiene el cuerpo humano adulto?', opts: ['206', '150', '310', '108'], ans: 0 },
+      { cat: '🌊 GEOGRAFÍA', q: '¿Cuál es el océano más grande del planeta Tierra?', opts: ['Atlántico', 'Índico', 'Pacífico', 'Ártico'], ans: 2 },
+      { cat: '🦕 HISTORIA', q: '¿Qué animal legendario habitó la Tierra hace millones de años?', opts: ['Dinosaurio', 'Minotauro', 'Pegaso', 'Dragón'], ans: 0 },
+      { cat: '🎨 ARTE & COLOR', q: '¿Qué colores debes mezclar para obtener el color Verde?', opts: ['Rojo y Azul', 'Azul y Amarillo', 'Amarillo y Rojo', 'Blanco y Negro'], ans: 1 },
+      { cat: '☀️ EL SOL', q: '¿Qué tipo de cuerpo celeste es el Sol?', opts: ['Un Planeta', 'Un Cometa', 'Una Estrella', 'Una Luna'], ans: 2 },
+      { cat: '🌱 BOTÁNICA', q: '¿Qué proceso usan las plantas para alimentarse con la luz solar?', opts: ['Fotosíntesis', 'Digestión', 'Evaporación', 'Respiración'], ans: 0 }
+    ];
+
+    let qIdx = 0;
+    let score = 0;
+
+    let audioCtx = null;
+    function playTone(freq, dur = 0.15) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+      } catch(e){}
+    }
+
+    function startGame() {
+      qIdx = 0;
+      score = 0;
+      document.getElementById('scoreText').textContent = '0';
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      if (qIdx >= QUESTIONS.length) {
+        document.getElementById('finalScore').textContent = score + ' / ' + (QUESTIONS.length * 100);
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+        return;
+      }
+
+      const q = QUESTIONS[qIdx];
+      document.getElementById('catTag').textContent = q.cat;
+      document.getElementById('questionText').textContent = q.q;
+      document.getElementById('qCountText').textContent = (qIdx + 1) + '/' + QUESTIONS.length;
+
+      const grid = document.getElementById('answersGrid');
+      grid.innerHTML = '';
+      q.opts.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `btn-ans btn-${idx}`;
+        btn.textContent = opt;
+        btn.onclick = () => selectOption(btn, idx, q.ans);
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectOption(btn, chosen, correct) {
+      if (chosen === correct) {
+        btn.style.boxShadow = '0 0 20px #fff';
+        playTone(600, 0.1);
+        setTimeout(() => playTone(1000, 0.2), 100);
+        score += 100;
+        document.getElementById('scoreText').textContent = score;
+      } else {
+        btn.style.opacity = '0.4';
+        playTone(220, 0.25);
+      }
+
+      setTimeout(() => {
+        qIdx++;
+        loadQuestion();
+      }, 500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Candy Kingdom Match-3 - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: 'Outfit', sans-serif; }
+    body { background: linear-gradient(180deg, #831843 0%, #be185d 60%, #ec4899 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; }
+    .game-box { width: 100%; max-width: 440px; background: rgba(131, 24, 67, 0.85); border: 3px solid #f472b6; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(10px); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+    .stat-badge { background: #9d174d; border: 1.5px solid #fbcfe8; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 14px; color: #fef08a; }
+    .board-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; background: #500724; padding: 10px; border-radius: 16px; border: 2px solid #db2777; }
+    .candy { aspect-ratio: 1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer; transition: transform 0.15s ease; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
+    .candy:hover { transform: scale(1.08); }
+    .candy.selected { border: 3px solid #facc15; transform: scale(1.15); box-shadow: 0 0 15px #facc15; }
+    .overlay { position: fixed; inset: 0; background: rgba(131, 24, 67, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; z-index: 50; }
+    .overlay.hidden { display: none; }
+    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 22px; padding: 14px 40px; border: none; border-radius: 16px; cursor: pointer; box-shadow: 0 6px 0 #ca8a04; }
+  </style>
+</head>
+<body>
+  <div class="game-box">
+    <div class="top-bar">
+      <div class="stat-badge">🍬 PUNTOS: <span id="scoreText">0</span></div>
+      <div class="stat-badge">🎯 META: <span id="targetText">1000</span></div>
+    </div>
+    <div class="board-grid" id="board"></div>
+  </div>
+
+  <div class="overlay" id="startScreen">
+    <h1 style="font-family: 'Bungee'; font-size: 36px; color: #facc15; text-shadow: 0 0 20px rgba(250, 204, 21, 0.6);">CANDY KINGDOM</h1>
+    <p style="font-size: 16px; color: #fce7f3; max-width: 320px;">¡Combina 3 o más dulces del mismo tipo para crear explosiones de caramelo!</p>
+    <button class="btn-play" onclick="startGame()">¡JUGAR AHORA!</button>
+  </div>
+
+  <div class="overlay hidden" id="gameOverScreen">
+    <h1 style="font-family: 'Bungee'; font-size: 34px; color: #facc15;">🏆 ¡META ALCANZADA! 🏆</h1>
+    <p style="font-size: 18px; color: #fce7f3;">¡Felicidades por completar el reino dulce!</p>
+    <button class="btn-play" onclick="startGame()">JUGAR OTRA VEZ</button>
+  </div>
+
+  <script>
+    const CANDIES = ['🍓', '🍋', '🍇', '🍏', '🍊', '🍭'];
+    const CANDY_BG = {
+      '🍓': '#ef4444',
+      '🍋': '#eab308',
+      '🍇': '#a855f7',
+      '🍏': '#22c55e',
+      '🍊': '#f97316',
+      '🍭': '#06b6d4'
+    };
+
+    const ROWS = 6, COLS = 6;
+    let board = [];
+    let selected = null;
+    let score = 0;
+
+    let audioCtx = null;
+    function playPop(freq) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+      } catch(e){}
+    }
+
+    function startGame() {
+      score = 0;
+      selected = null;
+      document.getElementById('scoreText').textContent = '0';
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      initBoard();
+    }
+
+    function initBoard() {
+      board = [];
+      for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          board[r][c] = CANDIES[Math.floor(Math.random() * CANDIES.length)];
+        }
+      }
+      render();
+      checkMatches();
+    }
+
+    function render() {
+      const bEl = document.getElementById('board');
+      bEl.innerHTML = '';
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const item = board[r][c];
+          const candyEl = document.createElement('div');
+          candyEl.className = `candy ${selected && selected.r === r && selected.c === c ? 'selected' : ''}`;
+          candyEl.style.backgroundColor = CANDY_BG[item];
+          candyEl.textContent = item;
+          candyEl.onclick = () => handleSelect(r, c);
+          bEl.appendChild(candyEl);
+        }
+      }
+    }
+
+    function handleSelect(r, c) {
+      if (!selected) {
+        selected = { r, c };
+        playPop(400);
+      } else {
+        const isNeighbor = Math.abs(selected.r - r) + Math.abs(selected.c - c) === 1;
+        if (isNeighbor) {
+          // Intercambiar
+          const tmp = board[r][c];
+          board[r][c] = board[selected.r][selected.c];
+          board[selected.r][selected.c] = tmp;
+          selected = null;
+          playPop(600);
+          render();
+          checkMatches();
+        } else {
+          selected = { r, c };
+          playPop(400);
+        }
+      }
+      render();
+    }
+
+    function checkMatches() {
+      let matched = [];
+
+      // Horizontales
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS - 2; c++) {
+          if (board[r][c] && board[r][c] === board[r][c + 1] && board[r][c] === board[r][c + 2]) {
+            matched.push({ r, c }, { r, c: c + 1 }, { r, c: c + 2 });
+          }
+        }
+      }
+
+      // Verticales
+      for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS - 2; r++) {
+          if (board[r][c] && board[r][c] === board[r + 1][c] && board[r][c] === board[r + 2][c]) {
+            matched.push({ r, c }, { r: r + 1, c }, { r: r + 2, c });
+          }
+        }
+      }
+
+      if (matched.length > 0) {
+        matched.forEach(m => {
+          board[m.r][m.c] = null;
+        });
+
+        score += matched.length * 20;
+        document.getElementById('scoreText').textContent = score;
+        playPop(900);
+
+        setTimeout(() => {
+          fillBoard();
+        }, 250);
+      }
+    }
+
+    function fillBoard() {
+      for (let c = 0; c < COLS; c++) {
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (!board[r][c]) {
+            for (let up = r - 1; up >= 0; up--) {
+              if (board[up][c]) {
+                board[r][c] = board[up][c];
+                board[up][c] = null;
+                break;
+              }
+            }
+            if (!board[r][c]) {
+              board[r][c] = CANDIES[Math.floor(Math.random() * CANDIES.length)];
+            }
+          }
+        }
+      }
+      render();
+
+      if (score >= 1000) {
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+      } else {
+        setTimeout(checkMatches, 200);
+      }
+    }
+  </script>
+</body>
+</html>

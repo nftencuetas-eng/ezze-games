@@ -75,8 +75,8 @@ class GamePlayer {
 
     this.updateFavButton(window.app.isFavorite(game.slug));
 
-    // Cargar iframe
-    this.iframe.src = game.gamePath;
+    // Cargar iframe con versionado en tiempo real anti-cache
+    this.iframe.src = `${game.gamePath}?t=${Date.now()}`;
 
     // Registrar partida
     window.api.recordPlay(game.slug);

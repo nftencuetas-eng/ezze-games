@@ -1,239 +1,99 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>2048 Original Master - ezze.games</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Outfit', sans-serif; }
-    body { background: #0f172a; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
-    .game-wrapper { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px; }
-    .header { display: flex; justify-content: space-between; align-items: center; }
-    .title-box h1 { font-size: 42px; font-weight: 900; color: #facc15; line-height: 1; text-shadow: 0 0 15px rgba(250, 204, 21, 0.4); }
-    .title-box p { font-size: 13px; color: #94a3b8; }
-    .scores { display: flex; gap: 8px; }
-    .score-card { background: #1e293b; border: 1.5px solid #334155; padding: 8px 14px; border-radius: 12px; text-align: center; min-width: 75px; }
-    .score-card span { font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
-    .score-card div { font-size: 20px; font-weight: 900; color: #fff; }
-    .controls-row { display: flex; justify-content: space-between; align-items: center; }
-    .btn-restart { background: #3b82f6; border: none; color: #fff; font-weight: 800; font-size: 14px; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: 0.15s; }
-    .btn-restart:active { transform: scale(0.95); }
-    .grid-container { width: 100%; aspect-ratio: 1; background: #1e293b; border: 3px solid #334155; border-radius: 16px; padding: 12px; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 12px; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-    .cell { background: rgba(255, 255, 255, 0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; color: #fff; transition: transform 0.1s ease, background 0.1s ease; }
-    .tile-2 { background: #38bdf8; color: #0f172a; }
-    .tile-4 { background: #818cf8; color: #0f172a; }
-    .tile-8 { background: #c084fc; color: #fff; }
-    .tile-16 { background: #f472b6; color: #fff; }
-    .tile-32 { background: #fb7185; color: #fff; }
-    .tile-64 { background: #f97316; color: #fff; }
-    .tile-128 { background: #eab308; color: #0f172a; font-size: 24px; box-shadow: 0 0 10px #eab308; }
-    .tile-256 { background: #84cc16; color: #0f172a; font-size: 24px; box-shadow: 0 0 15px #84cc16; }
-    .tile-512 { background: #10b981; color: #0f172a; font-size: 24px; box-shadow: 0 0 20px #10b981; }
-    .tile-1024 { background: #06b6d4; color: #fff; font-size: 20px; box-shadow: 0 0 25px #06b6d4; }
-    .tile-2048 { background: #f59e0b; color: #000; font-size: 20px; box-shadow: 0 0 30px #f59e0b; }
-    .game-over-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; backdrop-filter: blur(6px); }
-    .game-over-overlay.hidden { display: none; }
-  </style>
+  <meta charset="utf-8">
+  <title>2048</title>
+
+  <link href="style/main.css" rel="stylesheet" type="text/css">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="meta/apple-touch-icon.png">
+  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x1096.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone 5+ -->
+  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x920.png"  media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone, retina -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body>
-  <div class="game-wrapper">
-    <div class="header">
-      <div class="title-box">
-        <h1>2048</h1>
-        <p>¡Une las fichas hasta llegar a 2048!</p>
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">2048</h1>
+      <div class="scores-container">
+        <div class="score-container">0</div>
+        <div class="best-container">0</div>
       </div>
-      <div class="scores">
-        <div class="score-card">
-          <span>PUNTOS</span>
-          <div id="score">0</div>
+    </div>
+
+    <div class="above-game">
+      <p class="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
+      <a class="restart-button">New Game</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+	        <a class="keep-playing-button">Keep going</a>
+          <a class="retry-button">Try again</a>
         </div>
-        <div class="score-card">
-          <span>RÉCORD</span>
-          <div id="best">0</div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
         </div>
       </div>
-    </div>
-    <div class="controls-row">
-      <span style="font-size: 13px; color: #94a3b8;">Desliza o usa las flechas ◀ ▲ ▼ ▶</span>
-      <button class="btn-restart" id="btnRestart">REINICIAR</button>
-    </div>
-    <div class="grid-container" id="grid">
-      <div class="game-over-overlay hidden" id="gameOver">
-        <h2 style="font-size: 32px; color: #ef4444;">¡FIN DEL JUEGO!</h2>
-        <p style="color: #94a3b8;">No quedan movimientos posibles</p>
-        <button class="btn-restart" onclick="initGame()">JUGAR DE NUEVO</button>
+
+      <div class="tile-container">
+
       </div>
     </div>
+
+    <p class="game-explanation">
+      <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+    </p>
+    <hr>
+    <p>
+    <strong class="important">Note:</strong> This site is the official version of 2048. You can play it on your phone via <a href="http://git.io/2048">http://git.io/2048.</a> All other apps or sites are derivatives or fakes, and should be used with caution.
+    </p>
+    <hr>
+    <p>
+    Created by <a href="http://gabrielecirulli.com" target="_blank">Gabriele Cirulli.</a> Based on <a href="https://itunes.apple.com/us/app/1024!/id823499224" target="_blank">1024 by Veewo Studio</a> and conceptually similar to <a href="http://asherv.com/threes/" target="_blank">Threes by Asher Vollmer.</a>
+    </p>
   </div>
 
-  <script>
-    let board = [];
-    let score = 0;
-    let best = parseInt(localStorage.getItem('2048_best') || '0');
-    document.getElementById('best').textContent = best;
-
-    function initGame() {
-      board = [
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0]
-      ];
-      score = 0;
-      document.getElementById('score').textContent = '0';
-      document.getElementById('gameOver').classList.add('hidden');
-      spawnTile();
-      spawnTile();
-      render();
-    }
-
-    function spawnTile() {
-      let empty = [];
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          if (board[r][c] === 0) empty.push({ r, c });
-        }
-      }
-      if (empty.length > 0) {
-        const spot = empty[Math.floor(Math.random() * empty.length)];
-        board[spot.r][spot.c] = Math.random() > 0.1 ? 2 : 4;
-      }
-    }
-
-    function render() {
-      const grid = document.getElementById('grid');
-      const overlay = document.getElementById('gameOver');
-      grid.innerHTML = '';
-      grid.appendChild(overlay);
-
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          const val = board[r][c];
-          const cell = document.createElement('div');
-          cell.className = `cell ${val > 0 ? 'tile-' + val : ''}`;
-          cell.textContent = val > 0 ? val : '';
-          grid.appendChild(cell);
-        }
-      }
-    }
-
-    function slide(row) {
-      let arr = row.filter(val => val);
-      for (let i = 0; i < arr.length - 1; i++) {
-        if (arr[i] === arr[i + 1]) {
-          arr[i] *= 2;
-          score += arr[i];
-          arr[i + 1] = 0;
-        }
-      }
-      arr = arr.filter(val => val);
-      while (arr.length < 4) arr.push(0);
-      return arr;
-    }
-
-    function moveLeft() {
-      let moved = false;
-      for (let r = 0; r < 4; r++) {
-        const old = [...board[r]];
-        board[r] = slide(board[r]);
-        if (old.some((v, i) => v !== board[r][i])) moved = true;
-      }
-      return moved;
-    }
-
-    function moveRight() {
-      let moved = false;
-      for (let r = 0; r < 4; r++) {
-        const old = [...board[r]];
-        board[r] = slide(board[r].reverse()).reverse();
-        if (old.some((v, i) => v !== board[r][i])) moved = true;
-      }
-      return moved;
-    }
-
-    function moveUp() {
-      let moved = false;
-      for (let c = 0; c < 4; c++) {
-        let col = [board[0][c], board[1][c], board[2][c], board[3][c]];
-        const old = [...col];
-        col = slide(col);
-        for (let r = 0; r < 4; r++) board[r][c] = col[r];
-        if (old.some((v, i) => v !== col[i])) moved = true;
-      }
-      return moved;
-    }
-
-    function moveDown() {
-      let moved = false;
-      for (let c = 0; c < 4; c++) {
-        let col = [board[0][c], board[1][c], board[2][c], board[3][c]].reverse();
-        const old = [...col];
-        col = slide(col).reverse();
-        for (let r = 0; r < 4; r++) board[r][c] = col[r];
-        if (old.some((v, i) => v !== col[i])) moved = true;
-      }
-      return moved;
-    }
-
-    function handleMove(moved) {
-      if (moved) {
-        spawnTile();
-        render();
-        document.getElementById('score').textContent = score;
-        if (score > best) {
-          best = score;
-          localStorage.setItem('2048_best', best);
-          document.getElementById('best').textContent = best;
-        }
-        if (isGameOver()) {
-          document.getElementById('gameOver').classList.remove('hidden');
-        }
-      }
-    }
-
-    function isGameOver() {
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          if (board[r][c] === 0) return false;
-          if (c < 3 && board[r][c] === board[r][c + 1]) return false;
-          if (r < 3 && board[r][c] === board[r + 1][c]) return false;
-        }
-      }
-      return true;
-    }
-
-    window.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft' || e.key === 'a') handleMove(moveLeft());
-      if (e.key === 'ArrowRight' || e.key === 'd') handleMove(moveRight());
-      if (e.key === 'ArrowUp' || e.key === 'w') handleMove(moveUp());
-      if (e.key === 'ArrowDown' || e.key === 's') handleMove(moveDown());
-    });
-
-    let touchStartX = 0, touchStartY = 0;
-    window.addEventListener('touchstart', e => {
-      if (e.touches.length > 0) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    window.addEventListener('touchend', e => {
-      if (e.changedTouches.length > 0) {
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const dy = e.changedTouches[0].clientY - touchStartY;
-        if (Math.max(Math.abs(dx), Math.abs(dy)) > 30) {
-          if (Math.abs(dx) > Math.abs(dy)) {
-            handleMove(dx > 0 ? moveRight() : moveLeft());
-          } else {
-            handleMove(dy > 0 ? moveDown() : moveUp());
-          }
-        }
-      }
-    }, { passive: true });
-
-    document.getElementById('btnRestart').addEventListener('click', initGame);
-    initGame();
-  </script>
+  <script src="js/bind_polyfill.js"></script>
+  <script src="js/classlist_polyfill.js"></script>
+  <script src="js/animframe_polyfill.js"></script>
+  <script src="js/keyboard_input_manager.js"></script>
+  <script src="js/html_actuator.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/tile.js"></script>
+  <script src="js/local_storage_manager.js"></script>
+  <script src="js/game_manager.js"></script>
+  <script src="js/application.js"></script>
 </body>
 </html>

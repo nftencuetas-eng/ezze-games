@@ -1,167 +1,123 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tower Master - ezze.games</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Bungee', cursive; }
-    body { background: #0f172a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #canvasWrap { position: relative; width: 100%; height: 100%; max-width: 480px; max-height: 800px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 70%, #fde047 100%); }
-    .hud { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; font-size: 16px; color: #0284c7; z-index: 10; pointer-events: none; }
-    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; z-index: 20; }
-    .overlay.hidden { display: none; }
-    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #ca8a04; }
-  </style>
-</head>
-<body>
-  <div id="canvasWrap">
-    <div class="hud">
-      <div>PISOS: <span id="floorText" style="color: #f97316;">0</span></div>
-      <div>RÉCORD: <span id="bestText" style="color: #0284c7;">0</span></div>
-    </div>
-    <canvas id="towerCanvas" width="400" height="650"></canvas>
-    <div class="overlay" id="startScreen">
-      <h1 style="font-size: 40px; color: #facc15; text-shadow: 0 0 20px rgba(250, 204, 21, 0.6);">TOWER MASTER</h1>
-      <p style="font-family: 'Outfit'; font-size: 15px; color: #94a3b8;">¡Toca la pantalla para soltar el bloque y construir la torre más alta!</p>
-      <button class="btn-play" id="btnStart">CONSTRUIR</button>
-    </div>
-    <div class="overlay hidden" id="gameOverScreen">
-      <h1 style="font-size: 34px; color: #ef4444;">¡LA TORRE SE CAYÓ!</h1>
-      <p style="font-family: 'Outfit'; font-size: 18px; color: #cbd5e1;">Pisos construidos: <strong id="finalScore" style="color: #facc15;">0</strong></p>
-      <button class="btn-play" id="btnRestart">JUGAR DE NUEVO</button>
-    </div>
-  </div>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui"><title>Tower Building</title><link rel="icon" type="image/x-icon" href="./assets/favicon.png"><style>*{margin:0;padding:0}img{width:100%}html{background:#fff;height:100%}body{font-family:"Helvetica Neue",Arial,Helvetica,sans-serif;margin:0 auto;text-align:center;width:100%;height:100%;background:#f95240 url(assets/main-bg.png)}@media screen and (min-height:560px){html{font-size:100px}}@media screen and (min-height:640px){html{font-size:112.5px}}@media screen and (min-height:720px){html{font-size:125px}}@media screen and (min-height:800px){html{font-size:137.5px}}@media screen and (min-height:880px){html{font-size:150px}}@media screen and (min-height:960px){html{font-size:162.5px}}@media screen and (min-height:1040px){html{font-size:180px}}@media screen and (min-height:1200px){html{font-size:200px}}html{font-size:17.6vh}#canvas{position:fixed;left:0;top:0;right:0;bottom:0;margin:auto}a{text-decoration:none}li,ol,ul{list-style-type:none;padding:0;margin:0}.hide{display:none}.clear{clear:both}.loading{background-color:#f05a50;height:100%;width:100%}.loading .main{width:60%;margin:0 auto;color:#fff}.loading .main img{width:60%;margin:1rem auto 0}.loading .main .title{font-size:.3rem}.loading .main .text{font-size:.15rem}.loading .main .bar{height:.12rem;width:100%;border:3px solid #fff;border-radius:.6rem;margin:.1rem 0}.loading .main .bar .sub{height:.1rem;width:98%;margin:.008rem auto 0}.loading .main .bar .percent{height:100%;width:0;background-color:#fff;border-radius:.6rem}.loading .logo{position:absolute;bottom:.3rem;left:0;right:0}.loading .logo img{width:1rem}.content{height:100vh;margin:0 auto;position:relative}.landing .title{width:60%}.landing .logo{width:30%;position:absolute;right:.2rem;top:.2rem}.landing .action-2{position:absolute;bottom:.2rem;width:100%}.landing .start{width:65%}.slideTop{-webkit-animation:st 1s ease-in-out;animation:st 1s ease-in-out}@-webkit-keyframes st{0%{transform:translateZ(0)}100%{transform:translate3d(0,-100%,0)}}@keyframes st{0%{transform:translateZ(0)}100%{transform:translate3d(0,-100%,0)}}.slideBottom{-webkit-animation:sb 1s ease-in-out;animation:sb 1s ease-in-out}@-webkit-keyframes sb{0%{transform:translateZ(0)}100%{transform:translate3d(0,200%,0)}}@keyframes sb{0%{transform:translateZ(0)}100%{transform:translate3d(0,200%,0)}}.swing{-webkit-animation:sw 2s ease-in-out alternate infinite;animation:sw 2s ease-in-out alternate infinite}@-webkit-keyframes sw{0%{transform:rotate(5deg);transform-origin:top center}100%{transform:rotate(-5deg);transform-origin:top center}}@keyframes sw{0%{transform:rotate(5deg);transform-origin:top center}100%{transform:rotate(-5deg);transform-origin:top center}}.modal .mask{background-color:#000;opacity:.6;position:fixed;height:100%;width:100%;top:0;left:0}.modal .modal-content{position:fixed;height:100%;width:90%;margin-top:.3rem;top:0}.modal .main{width:85%;margin:0 auto}.modal .container{position:relative}.modal .bg{width:100%;position:absolute;top:0;left:0}.modal .modal-main{width:100%;position:absolute;top:0;left:0;margin-top:-.4rem}.modal .over-img{width:80%;margin:.8rem auto 0}.modal .over-score{margin-top:-.2rem;font-size:.5rem;color:#ff735c;text-shadow:-2px -2px 0 #fff,2px -2px 0 #fff,-2px 2px 0 #fff,2px 2px 0 #fff}.modal .tip{font-size:.16rem;color:#9b724e}.modal .over-button-b{width:70%;margin:.1rem auto 0}.wxShare{background:#000;position:absolute;top:0;left:0;width:100%;height:100%;z-index:11;opacity:.9}.wxShare img{width:50%;float:right;margin:10px 10px 0 0}@font-face{font-family:wenxue;src:url(assets/wenxue.eot);src:url(assets/wenxue.eot),url(assets/wenxue.woff),url(assets/wenxue.ttf),url(assets/wenxue.svg)}.font-wenxue{font-family:wenxue}</style></head><body><canvas id="canvas" class="hide"></canvas><div class="content"><div class="loading"><div class="main"><img src="./assets/main-loading.gif"><div class="progress"><div class="title font-wenxue">0%</div><div class="bar"><div class="sub"><div class="percent"></div></div></div><div class="text">Loading...</div></div></div></div><div class="landing hide"><div class="action-1"><img src="./assets/main-index-title.png" class="title swing"></div><div class="action-2"><img id="start" src="./assets/main-index-start.png" class="start"></div></div><div id="modal" class="modal hide"><div class="mask"></div><div class="js-modal-content modal-content"><div class="main"><div class="container"><img src="./assets/main-modal-bg.png" class="bg"><div class="modal-main"><div id="over-modal" class="hide js-modal-card"><img src="./assets/main-modal-over.png" class="over-img"><div id="score" class="over-score font-wenxue"></div><div id="over-zero" class="hide"><div class="tip"><p>Try Again!</p><img src="./assets/main-modal-again-b.png" class="over-button-b js-reload"><img src="./assets/main-modal-invite-b.png" class="over-button-b js-invite"></div></div></div></div></div></div></div></div><div class="wxShare hide"><img src="./assets/main-share-icon.png"></div></div><script src="./dist/main.js"></script><script src="./assets/zepto-1.1.6.min.js"></script><script>var domReady, loadFinish, canvasReady, loadError, gameStart, game, score, successCount
+  // init window height and width
+  var gameWidth = window.innerWidth
+  var gameHeight = window.innerHeight
+  var ratio = 1.5
+  if (gameHeight / gameWidth < ratio) {
+    gameWidth = Math.ceil(gameHeight / ratio)
+  }
+  $('.content').css({ "height": gameHeight + "px", "width": gameWidth + "px" })
+  $('.js-modal-content').css({ "width": gameWidth + "px" })
 
-  <script>
-    const canvas = document.getElementById('towerCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const COLORS = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7', '#ec4899'];
-    let stack = [];
-    let currentBlock = null;
-    let score = 0;
-    let best = parseInt(localStorage.getItem('tower_best') || '0');
-    document.getElementById('bestText').textContent = best;
-    let isPlaying = false;
-    let camY = 0;
-
-    function startGame() {
-      stack = [{ x: 100, y: 550, w: 200, h: 40, color: '#3b82f6' }];
-      score = 0;
-      camY = 0;
-      isPlaying = true;
-      document.getElementById('floorText').textContent = '0';
-      document.getElementById('startScreen').classList.add('hidden');
-      document.getElementById('gameOverScreen').classList.add('hidden');
-      spawnBlock();
+  // loading animation
+  function hideLoading() {
+    if (domReady && canvasReady) {
+      $('#canvas').show()
+      loadFinish = true
+      setTimeout(function () {
+        $('.loading').hide()
+        $('.landing').show()
+      }, 1000)
     }
+  }
 
-    function spawnBlock() {
-      const prev = stack[stack.length - 1];
-      const color = COLORS[stack.length % COLORS.length];
-      currentBlock = {
-        x: 0,
-        y: prev.y - 40,
-        w: prev.w,
-        h: 40,
-        color,
-        vx: 4 + Math.min(6, stack.length * 0.15)
-      };
+  function updateLoading(status) {
+    var success = status.success
+    var total = status.total
+    var failed = status.failed
+    if (failed > 0 && !loadError) {
+      loadError = true
+      alert('Network error... Please try again.')
+      return
     }
-
-    function dropBlock() {
-      if (!isPlaying || !currentBlock) return;
-
-      const prev = stack[stack.length - 1];
-      const diff = currentBlock.x - prev.x;
-
-      if (Math.abs(diff) >= currentBlock.w) {
-        // Falló completamente
-        isPlaying = false;
-        if (score > best) {
-          best = score;
-          localStorage.setItem('tower_best', best);
-        }
-        document.getElementById('finalScore').textContent = score;
-        document.getElementById('gameOverScreen').classList.remove('hidden');
-        return;
-      }
-
-      // Recortar bloque
-      if (diff > 0) {
-        currentBlock.w -= diff;
-      } else {
-        currentBlock.w += diff;
-        currentBlock.x = prev.x;
-      }
-
-      stack.push(currentBlock);
-      score++;
-      document.getElementById('floorText').textContent = score;
-
-      // Subir cámara
-      if (stack.length > 5) {
-        camY = (stack.length - 5) * 40;
-      }
-
-      spawnBlock();
+    var percent = parseInt((success / total) * 100);
+    if (percent === 100 && !canvasReady) {
+      canvasReady = true
+      hideLoading()
     }
+    percent = percent > 98 ? 98 : percent
+    percent = percent + '%'
+    $('.loading .title').text(percent);
+    $('.loading .percent').css({
+      'width': percent
+    })
+  }
 
-    window.addEventListener('keydown', e => { if (e.code === 'Space') dropBlock(); });
-    window.addEventListener('touchstart', (e) => { e.preventDefault(); dropBlock(); }, { passive: false });
-    window.addEventListener('mousedown', dropBlock);
+  function overShowOver() {
+    $('#modal').show()
+    $('#over-modal').show()
+    $('#over-zero').show()
+  }
 
-    document.getElementById('btnStart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
-    document.getElementById('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
-
-    function update() {
-      if (!isPlaying || !currentBlock) return;
-
-      currentBlock.x += currentBlock.vx;
-      if (currentBlock.x + currentBlock.w > canvas.width || currentBlock.x < 0) {
-        currentBlock.vx *= -1;
-      }
+  // game customization options
+  const option = {
+    width: gameWidth,
+    height: gameHeight,
+    canvasId: 'canvas',
+    soundOn: true,
+    setGameScore: function (s) {
+      score = s
+    },
+    setGameSuccess: function (s) {
+      successCount = s
+    },
+    setGameFailed: function (f) {
+      $('#score').text(score)
+      if (f >= 3) overShowOver()
     }
+  }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // game init with option
+  function gameReady() {
+    game = TowerGame(option)
+    game.load(function () {
+      game.init()
+      setTimeout(function () {
+        game.playBgm()
+      })
+    }, updateLoading)
+  }
 
-      ctx.save();
-      ctx.translate(0, camY);
+  var isWechat = navigator.userAgent.toLowerCase().indexOf("micromessenger") !== -1
+  if (isWechat) {
+    document.addEventListener("WeixinJSBridgeReady", gameReady, false)
+  } else {
+    gameReady()
+  }
 
-      // Suelo
-      ctx.fillStyle = '#15803d';
-      ctx.fillRect(0, 590, canvas.width, 100);
+  function indexHide() {
+    $('.landing .action-1').addClass('slideTop')
+    $('.landing .action-2').addClass('slideBottom')
+    setTimeout(function () {
+      $('.landing').hide()
+    }, 950)
+  }
 
-      // Bloques colocados
-      stack.forEach(b => {
-        ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-        ctx.strokeRect(b.x, b.y, b.w, b.h);
-      });
+  // click event
+  $('#start').on('click', function () {
+    if (gameStart) return
+    gameStart = true
+    setTimeout(function () {
+      game.playBgm()
+    })
+    indexHide()
+    setTimeout(game.start, 400)
+  })
 
-      // Bloque en movimiento
-      if (currentBlock) {
-        ctx.fillStyle = currentBlock.color;
-        ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-        ctx.strokeRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
-      }
+  $('.js-reload').on('click', function () {
+    window.location.href = window.location.href + '?s=' + (+new Date())
+  })
 
-      ctx.restore();
-    }
+  $('.js-invite').on('click', function () {
+    $('.wxShare').show()
+  })
 
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
+  $('.wxShare').on('click', function () {
+    $('.wxShare').hide()
+  })
 
-    loop();
-  </script>
-</body>
-</html>
+  // listener
+  window.addEventListener('load', function () {
+    domReady = true
+    hideLoading()
+  }, false);</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-YCWZ8ZDCH2"></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-YCWZ8ZDCH2")</script></body></html>

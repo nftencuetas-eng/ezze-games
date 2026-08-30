@@ -1,221 +1,49 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Clumsy Bird HD - ezze.games</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Bungee', cursive; }
-    body { background: #0f172a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #canvasWrap { position: relative; width: 100%; height: 100%; max-width: 480px; max-height: 800px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-    canvas { width: 100%; height: 100%; display: block; background: #38bdf8; }
-    .hud { position: absolute; top: 20px; left: 0; right: 0; text-align: center; font-size: 48px; color: #fff; text-shadow: 3px 3px 0 #000; pointer-events: none; z-index: 10; }
-    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; z-index: 20; }
-    .overlay.hidden { display: none; }
-    .btn-play { background: linear-gradient(135deg, #facc15, #eab308); color: #000; font-family: 'Bungee'; font-size: 22px; padding: 14px 36px; border: none; border-radius: 16px; cursor: pointer; box-shadow: 0 8px 0 #a16207; }
-    .btn-play:active { transform: translateY(4px); box-shadow: 0 4px 0 #a16207; }
-  </style>
-</head>
-<body>
-  <div id="canvasWrap">
-    <div class="hud" id="hudScore">0</div>
-    <canvas id="birdCanvas" width="400" height="600"></canvas>
-    <div class="overlay" id="startScreen">
-      <h1 style="font-size: 42px; color: #facc15; text-shadow: 0 0 20px rgba(250, 204, 21, 0.6);">CLUMSY BIRD</h1>
-      <p style="font-family: 'Outfit'; font-size: 16px; color: #94a3b8;">Toca la pantalla o presiona ESPACIO para aletear</p>
-      <button class="btn-play" id="btnStart">JUGAR AHORA</button>
-    </div>
-    <div class="overlay hidden" id="gameOverScreen">
-      <h1 style="font-size: 38px; color: #ef4444;">¡FIN DEL JUEGO!</h1>
-      <p style="font-family: 'Outfit'; font-size: 18px; color: #cbd5e1;">Puntos: <strong id="finalScore" style="color: #facc15;">0</strong></p>
-      <p style="font-family: 'Outfit'; font-size: 16px; color: #94a3b8;">Mejor récord: <strong id="bestScore" style="color: #38bdf8;">0</strong></p>
-      <button class="btn-play" id="btnRestart">JUGAR DE NUEVO</button>
-    </div>
-  </div>
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <title>Clumsy Bird</title>
+        <link rel="apple-touch-icon-precomposed" href="data/img/touch-icon-iphone.png"/>
+        <link rel="apple-touch-icon-precomposed" sizes="120x120" href="data/img/touch-icon-iphone-retina.png"/>
+        <link rel="shortcut icon" href="data/img/favicon.ico">
+        <link rel="stylesheet" type="text/css" media="screen" href="index.css">
+        <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="apple-mobile-web-app-title" content="Clumsy Bird">
+        <meta charset="UTF-8" />
+        <meta name="description" content="Clumsy Bird - A Flappy Bird clone using MelonJS"/>
+        <meta name="keywords" content="flappybird, flappy, bird, game, html5, melonjs,clone"/>
+        <meta name="robots" content="index, follow">
+        <meta name="google-site-verification" content="RDZI9SqVaffd48uHfZMv67-YdvviOMe2HuULEYqVgd4" />
+        <meta property="og:image" content="http://ellisonleao.github.io/clumsy-bird/data/img/bg.png" />
+        <meta property="og:title" content="Clumsy Bird - A Flappy Bird clone using MelonJS"/>
+        <meta property="og:url" content="http://ellisonleao.github.io/clumsy-bird/"/>
+        <meta property="og:site_name" content="Clumsy Bird - MelonJS"/>
 
-  <script>
-    const canvas = document.getElementById('birdCanvas');
-    const ctx = canvas.getContext('2d');
+        <!-- Twitter Card -->
+        <meta name="twitter:hashtag" content="clumsybird" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@ellisonleao" />
+        <meta name="twitter:creator" content="@ellisonleao" />
+        <meta name="twitter:title" content="Clumsy Bird" />
+        <meta name="twitter:description" content="A Flappy Bird melonJS clone" />
 
-    // Web Audio sintetizado
-    let audioCtx = null;
-    function flapSound() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    }
-    function scoreSound() {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.setValueAtTime(987, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-    }
+        <!-- Humans -->
+        <link rel="author" href="humans.txt" />
+    </head>
 
-    let bird = { x: 80, y: 300, vy: 0, r: 18, angle: 0 };
-    let pipes = [];
-    let score = 0;
-    let best = parseInt(localStorage.getItem('clumsy_best') || '0');
-    let isPlaying = false;
-    let tick = 0;
+    <body>
+        <!-- Canvas placeholder -->
+        <div id="screen"></div>
 
-    function startGame() {
-      bird = { x: 80, y: 300, vy: 0, r: 18, angle: 0 };
-      pipes = [];
-      score = 0;
-      isPlaying = true;
-      document.getElementById('hudScore').textContent = '0';
-      document.getElementById('startScreen').classList.add('hidden');
-      document.getElementById('gameOverScreen').classList.add('hidden');
-      flap();
-    }
+        <!-- melonJS Library -->
+        <script type="text/javascript" src="js/melonJS-min.js" ></script>
+        <script type="text/javascript" src="build/clumsy-min.js" ></script>
+        <script type="text/javascript">
+            window.onReady(function onReady() {
+                game.onload();
+            });
+        </script>
 
-    function flap() {
-      if (!isPlaying) return;
-      bird.vy = -7.5;
-      flapSound();
-    }
-
-    function spawnPipe() {
-      const gap = 140;
-      const topH = Math.random() * (canvas.height - gap - 160) + 60;
-      pipes.push({ x: canvas.width, top: topH, bottom: topH + gap, passed: false });
-    }
-
-    function triggerGameOver() {
-      isPlaying = false;
-      if (score > best) {
-        best = score;
-        localStorage.setItem('clumsy_best', best);
-      }
-      document.getElementById('finalScore').textContent = score;
-      document.getElementById('bestScore').textContent = best;
-      document.getElementById('gameOverScreen').classList.remove('hidden');
-    }
-
-    function update() {
-      if (!isPlaying) return;
-
-      tick++;
-      bird.vy += 0.38; // Gravedad
-      bird.y += bird.vy;
-      bird.angle = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, bird.vy * 0.08));
-
-      if (tick % 95 === 0) spawnPipe();
-
-      // Mover tuberías
-      for (let i = pipes.length - 1; i >= 0; i--) {
-        const p = pipes[i];
-        p.x -= 2.6;
-
-        // Puntuación
-        if (!p.passed && p.x + 60 < bird.x) {
-          p.passed = true;
-          score++;
-          scoreSound();
-          document.getElementById('hudScore').textContent = score;
-        }
-
-        // Colisiones con tuberías
-        if (bird.x + bird.r > p.x && bird.x - bird.r < p.x + 60) {
-          if (bird.y - bird.r < p.top || bird.y + bird.r > p.bottom) {
-            triggerGameOver();
-          }
-        }
-
-        if (p.x < -70) pipes.splice(i, 1);
-      }
-
-      // Suelo y techo
-      if (bird.y + bird.r > canvas.height - 40 || bird.y - bird.r < 0) {
-        triggerGameOver();
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 1. Cielo y Nubes
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // 2. Tuberías
-      pipes.forEach(p => {
-        ctx.fillStyle = '#22c55e';
-        ctx.strokeStyle = '#15803d';
-        ctx.lineWidth = 4;
-
-        // Tubería superior
-        ctx.fillRect(p.x, 0, 60, p.top);
-        ctx.strokeRect(p.x, -4, 60, p.top + 4);
-        ctx.fillRect(p.x - 4, p.top - 20, 68, 20); // Borde
-        ctx.strokeRect(p.x - 4, p.top - 20, 68, 20);
-
-        // Tubería inferior
-        ctx.fillRect(p.x, p.bottom, 60, canvas.height - p.bottom);
-        ctx.strokeRect(p.x, p.bottom, 60, canvas.height - p.bottom + 4);
-        ctx.fillRect(p.x - 4, p.bottom, 68, 20); // Borde
-        ctx.strokeRect(p.x - 4, p.bottom, 68, 20);
-      });
-
-      // 3. Suelo
-      ctx.fillStyle = '#eab308';
-      ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
-      ctx.fillStyle = '#84cc16';
-      ctx.fillRect(0, canvas.height - 40, canvas.width, 10);
-
-      // 4. Pájaro
-      ctx.save();
-      ctx.translate(bird.x, bird.y);
-      ctx.rotate(bird.angle);
-
-      // Cuerpo
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath(); ctx.arc(0, 0, bird.r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5; ctx.stroke();
-
-      // Ala
-      ctx.fillStyle = '#f97316';
-      ctx.beginPath(); ctx.ellipse(-6, 2, 10, 6, 0.2, 0, Math.PI * 2); ctx.fill();
-
-      // Ojo
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(6, -6, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.arc(8, -6, 2.5, 0, Math.PI * 2); ctx.fill();
-
-      // Pico
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(24, 4); ctx.lineTo(12, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
-
-      ctx.restore();
-    }
-
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    window.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') flap(); });
-    window.addEventListener('touchstart', (e) => { e.preventDefault(); flap(); }, { passive: false });
-    window.addEventListener('mousedown', flap);
-
-    document.getElementById('btnStart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
-    document.getElementById('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
-
-    loop();
-  </script>
-</body>
+    </body>
 </html>

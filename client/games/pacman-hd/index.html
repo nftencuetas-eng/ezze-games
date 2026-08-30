@@ -1,220 +1,261 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pac-Man Arcade HD - ezze.games</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Bungee', cursive; }
-    body { background: #000; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
-    .hud { width: 100%; max-width: 440px; display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 16px; color: #facc15; }
-    #canvasWrap { position: relative; width: 100%; max-width: 440px; aspect-ratio: 1; border: 3px solid #1d4ed8; border-radius: 14px; overflow: hidden; box-shadow: 0 0 30px rgba(29, 78, 216, 0.5); }
-    canvas { width: 100%; height: 100%; display: block; background: #000; }
-    .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 6px; margin-top: 10px; }
-    .d-btn { background: #1e293b; border: 2px solid #3b82f6; color: #fff; font-size: 18px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-    .d-btn:active { background: #facc15; color: #000; }
-    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
-    .overlay.hidden { display: none; }
-    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 18px; padding: 12px 32px; border: none; border-radius: 12px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <div class="hud">
-    <div>PUNTOS: <span id="scoreText">0</span></div>
-    <div>VIDAS: <span id="livesText">💛💛💛</span></div>
-  </div>
-  <div id="canvasWrap">
-    <canvas id="pacCanvas" width="440" height="440"></canvas>
-    <div class="overlay" id="startScreen">
-      <h1 style="font-size: 36px; color: #facc15;">PAC-MAN HD</h1>
-      <button class="btn-play" id="btnStart">JUGAR</button>
-    </div>
-    <div class="overlay hidden" id="gameOverScreen">
-      <h1 style="font-size: 32px; color: #ef4444;">¡FIN DEL JUEGO!</h1>
-      <button class="btn-play" id="btnRestart">REINTENTAR</button>
-    </div>
-  </div>
-  <div class="d-pad">
-    <div></div><button class="d-btn" id="btnUp">▲</button><div></div>
-    <button class="d-btn" id="btnLeft">◀</button><div></div><button class="d-btn" id="btnRight">▶</button>
-    <div></div><button class="d-btn" id="btnDown">▼</button><div></div>
-  </div>
 
-  <script>
-    const canvas = document.getElementById('pacCanvas');
-    const ctx = canvas.getContext('2d');
+<html>
 
-    const GRID = 20;
-    const MAP = [
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,2,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,2,1],
-      [1,0,1,1,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,1,0,1],
-      [1,0,1,1,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,1,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,0,1],
-      [1,0,0,0,0,1,0,0,0,1,3,3,1,0,0,0,1,0,0,0,0,1],
-      [1,1,1,1,0,1,1,1,3,1,3,3,1,3,1,1,1,0,1,1,1,1],
-      [3,3,3,1,0,1,3,3,3,3,3,3,3,3,3,3,1,0,1,3,3,3],
-      [1,1,1,1,0,1,3,1,1,3,3,3,3,1,1,3,1,0,1,1,1,1],
-      [3,3,3,3,0,3,3,1,3,3,3,3,3,3,1,3,3,0,3,3,3,3],
-      [1,1,1,1,0,1,3,1,1,1,1,1,1,1,1,3,1,0,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,1,0,1],
-      [1,2,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,2,1],
-      [1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1],
-      [1,0,0,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,1],
-      [1,0,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1,1,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    ];
+	<head>
 
-    let grid = JSON.parse(JSON.stringify(MAP));
-    let score = 0;
-    let lives = 3;
-    let pacman = { r: 14, c: 10, dirR: 0, dirC: 0, nextDirR: 0, nextDirC: 0 };
-    let ghosts = [
-      { r: 8, c: 9, color: '#ef4444', dirR: -1, dirC: 0 },
-      { r: 8, c: 10, color: '#ec4899', dirR: 1, dirC: 0 },
-      { r: 8, c: 11, color: '#38bdf8', dirR: 0, dirC: 1 },
-      { r: 7, c: 10, color: '#f59e0b', dirR: 0, dirC: -1 }
-    ];
-    let isPlaying = false;
-    let tick = 0;
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-121647007-2"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			
+			gtag('config', 'UA-121647007-2');
+		</script>
+	
+		<meta property="og:image" content="https://pacman-e281c.firebaseapp.com/img/preview.png">
+		<meta property="og:url" content="https://pacman-e281c.firebaseapp.com/">
+		<meta property="og:description" content="Pac-Man game written in HTML5 + CSS3 + jQuery with Canvas. This WebApp is a Responsive Web Design (RWD) website.">
+		<meta property="og:title" content="Lucio PANEPINTO - Pac-Man">
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta name="description" content="Pac-Man game written in HTML5 + CSS3 + jQuery with Canvas. This WebApp is a Responsive Web Design (RWD) website." />
+		<meta name="keywords" content="pacman, pac-man, pac-man online, pacman online, online, online games, games, free, puzzle, lucio panepinto, lucio, panepinto, html, html5, css, css3, javascript, jquery, rwd, responsive, responsive web design, responsive web, web design, canvas, draw" />
 
-    function startGame() {
-      grid = JSON.parse(JSON.stringify(MAP));
-      score = 0;
-      lives = 3;
-      pacman = { r: 14, c: 10, dirR: 0, dirC: 0, nextDirR: 0, nextDirC: 0 };
-      isPlaying = true;
-      document.getElementById('scoreText').textContent = '0';
-      document.getElementById('livesText').textContent = '💛💛💛';
-      document.getElementById('startScreen').classList.add('hidden');
-      document.getElementById('gameOverScreen').classList.add('hidden');
-    }
+		<link rel="stylesheet" type="text/css" href="css/pacman.css" />
+		<link rel="stylesheet" type="text/css" href="css/pacman-home.css" />
+	
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<!--<script type="text/javascript" src="js/jquery-mobile.js"></script>-->
+		<script type="text/javascript" src="js/jquery-buzz.js"></script>
+		
+		<script type="text/javascript" src="js/game.js"></script>
+		<script type="text/javascript" src="js/tools.js"></script>
+		<script type="text/javascript" src="js/board.js"></script>
+		<script type="text/javascript" src="js/paths.js"></script>
+		<script type="text/javascript" src="js/bubbles.js"></script>
+		<script type="text/javascript" src="js/fruits.js"></script>
+		<script type="text/javascript" src="js/pacman.js"></script>
+		<script type="text/javascript" src="js/ghosts.js"></script>
+		<script type="text/javascript" src="js/home.js"></script>
+		<script type="text/javascript" src="js/sound.js"></script>
+		
+		<script type="text/javascript">		
+			
+			function simulateKeyup(code) { 
+				var e = jQuery.Event("keyup");
+				e.keyCode = code;
+				jQuery('body').trigger(e);
+			}
+			function simulateKeydown(code) { 
+				var e = jQuery.Event("keydown");
+				e.keyCode = code;
+				jQuery('body').trigger(e);
+			}
+			
+			$(document).ready(function() { 
+				//$.mobile.loading().hide();
+				loadAllSound();
+				
+				HELP_TIMER = setInterval('blinkHelp()', HELP_DELAY);
+				
+				initHome();
+				
+				$(".sound").click(function(e) { 
+					e.stopPropagation();
+					
+					var sound = $(this).attr("data-sound");
+					if ( sound === "on" ) { 
+						$(".sound").attr("data-sound", "off");
+						$(".sound").find("img").attr("src", "img/sound-off.png");
+						GROUP_SOUND.mute();
+					} else { 
+						$(".sound").attr("data-sound", "on");
+						$(".sound").find("img").attr("src", "img/sound-on.png");
+						GROUP_SOUND.unmute();
+					}
+				});
+				
+				$(".help-button, #help").click(function(e) { 
+					e.stopPropagation();
+					if (!PACMAN_DEAD && !LOCK && !GAMEOVER) { 
+						if ( $('#help').css("display") === "none") { 
+							$('#help').fadeIn("slow");
+							$(".help-button").hide();
+							if ( $("#panel").css("display") !== "none") { 
+								pauseGame();
+							}
+						} else { 
+							$('#help').fadeOut("slow");
+							$(".help-button").show();
+						}
+					}
+				});
+				
+				$(".github,.putchu").click(function(e) { 
+					e.stopPropagation();
+				});
+				
+				$("#home").on("click touchstart", function(e) { 
+					if ( $('#help').css("display") === "none") { 
+						e.preventDefault();
+						simulateKeydown(13);
+					}
+				});
+				$("#control-up, #control-up-second, #control-up-big").on("mousedown touchstart", function(e) { 
+					e.preventDefault();
+					simulateKeydown(38);
+					simulateKeyup(13);
+				});
+				$("#control-down, #control-down-second, #control-down-big").on("mousedown touchstart", function(e) { 
+					e.preventDefault();
+					simulateKeydown(40);
+					simulateKeyup(13);
+				});
+				$("#control-left, #control-left-big").on("mousedown touchstart", function(e) { 
+					e.preventDefault();
+					simulateKeydown(37);
+					simulateKeyup(13);
+				});
+				$("#control-right, #control-right-big").on("mousedown touchstart", function(e) { 
+					e.preventDefault();
+					simulateKeydown(39);
+					simulateKeyup(13);
+				});
 
-    function setDir(dr, dc) {
-      pacman.nextDirR = dr;
-      pacman.nextDirC = dc;
-    }
-
-    window.addEventListener('keydown', e => {
-      if (e.key === 'ArrowUp' || e.key === 'w') setDir(-1, 0);
-      if (e.key === 'ArrowDown' || e.key === 's') setDir(1, 0);
-      if (e.key === 'ArrowLeft' || e.key === 'a') setDir(0, -1);
-      if (e.key === 'ArrowRight' || e.key === 'd') setDir(0, 1);
-    });
-
-    document.getElementById('btnUp').addEventListener('click', () => setDir(-1, 0));
-    document.getElementById('btnDown').addEventListener('click', () => setDir(1, 0));
-    document.getElementById('btnLeft').addEventListener('click', () => setDir(0, -1));
-    document.getElementById('btnRight').addEventListener('click', () => setDir(0, 1));
-
-    function update() {
-      if (!isPlaying) return;
-      tick++;
-      if (tick % 7 !== 0) return;
-
-      const nr = pacman.r + pacman.nextDirR;
-      const nc = pacman.c + pacman.nextDirC;
-      if (grid[nr] && grid[nr][nc] !== 1) {
-        pacman.dirR = pacman.nextDirR;
-        pacman.dirC = pacman.nextDirC;
-      }
-
-      const tr = pacman.r + pacman.dirR;
-      const tc = pacman.c + pacman.dirC;
-
-      if (grid[tr] && grid[tr][tc] !== 1) {
-        pacman.r = tr;
-        pacman.c = tc;
-
-        if (grid[tr][tc] === 0) {
-          grid[tr][tc] = 3;
-          score += 10;
-          document.getElementById('scoreText').textContent = score;
-        } else if (grid[tr][tc] === 2) {
-          grid[tr][tc] = 3;
-          score += 50;
-          document.getElementById('scoreText').textContent = score;
-        }
-      }
-
-      // Fantasmas
-      ghosts.forEach(g => {
-        const dirs = [
-          { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
-          { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
-        ].filter(d => grid[g.r + d.dr] && grid[g.r + d.dr][g.c + d.dc] !== 1);
-
-        if (dirs.length > 0) {
-          const chosen = dirs[Math.floor(Math.random() * dirs.length)];
-          g.r += chosen.dr;
-          g.c += chosen.dc;
-        }
-
-        if (g.r === pacman.r && g.c === pacman.c) {
-          lives--;
-          document.getElementById('livesText').textContent = '💛'.repeat(Math.max(0, lives));
-          pacman.r = 14; pacman.c = 10;
-          if (lives <= 0) {
-            isPlaying = false;
-            document.getElementById('gameOverScreen').classList.remove('hidden');
-          }
-        }
-      });
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let r = 0; r < grid.length; r++) {
-        for (let c = 0; c < grid[r].length; c++) {
-          const x = c * GRID, y = r * GRID;
-          const cell = grid[r][c];
-
-          if (cell === 1) {
-            ctx.fillStyle = '#1d4ed8';
-            ctx.fillRect(x, y, GRID, GRID);
-          } else if (cell === 0) {
-            ctx.fillStyle = '#fde047';
-            ctx.beginPath(); ctx.arc(x + GRID / 2, y + GRID / 2, 2.5, 0, Math.PI * 2); ctx.fill();
-          } else if (cell === 2) {
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(x + GRID / 2, y + GRID / 2, 6, 0, Math.PI * 2); ctx.fill();
-          }
-        }
-      }
-
-      // Pacman
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath();
-      ctx.arc(pacman.c * GRID + GRID / 2, pacman.r * GRID + GRID / 2, 8, 0.2 * Math.PI, 1.8 * Math.PI);
-      ctx.lineTo(pacman.c * GRID + GRID / 2, pacman.r * GRID + GRID / 2);
-      ctx.fill();
-
-      // Fantasmas
-      ghosts.forEach(g => {
-        ctx.fillStyle = g.color;
-        ctx.beginPath();
-        ctx.arc(g.c * GRID + GRID / 2, g.r * GRID + GRID / 2 - 2, 7, Math.PI, 0);
-        ctx.lineTo(g.c * GRID + GRID / 2 + 7, g.r * GRID + GRID / 2 + 7);
-        ctx.lineTo(g.c * GRID + GRID / 2 - 7, g.r * GRID + GRID / 2 + 7);
-        ctx.closePath(); ctx.fill();
-      });
-    }
-
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    document.getElementById('btnStart').addEventListener('click', startGame);
-    document.getElementById('btnRestart').addEventListener('click', startGame);
-
-    loop();
-  </script>
-</body>
+				
+				$("body").keyup(function(e) { 
+					KEYDOWN = false;
+				});
+				
+				$("body").keydown(function(e) { 
+				
+					if (HOME) { 
+						
+						initGame(true);
+						
+					} else { 				
+						//if (!KEYDOWN) { 
+							KEYDOWN = true;
+							if (PACMAN_DEAD && !LOCK) { 
+								erasePacman();
+								resetPacman();
+								drawPacman();
+								
+								eraseGhosts();
+								resetGhosts();
+								drawGhosts();
+								moveGhosts();
+								
+								blinkSuperBubbles();
+								
+							} else if (e.keyCode >= 37 && e.keyCode <= 40 && !PAUSE && !PACMAN_DEAD && !LOCK) { 
+								if ( e.keyCode === 39 ) { 
+									movePacman(1);
+								} else if ( e.keyCode === 40 ) { 
+									movePacman(2);
+								} else if ( e.keyCode === 37 ) { 
+									movePacman(3);
+								} else if ( e.keyCode === 38 ) { 
+									movePacman(4);
+								}
+							} else if (e.keyCode === 68 && !PAUSE) { 
+								/*if ( $("#canvas-paths").css("display") === "none" ) { 
+									$("#canvas-paths").show();
+								} else { 
+									$("#canvas-paths").hide();
+								}*/
+							} else if (e.keyCode === 80 && !PACMAN_DEAD && !LOCK) { 
+								if (PAUSE) { 
+									resumeGame();
+								} else { 
+									pauseGame();
+								}
+							} else if (GAMEOVER) { 
+								initHome();
+							}
+						//}
+					}
+				});
+			});
+		</script>
+	
+		<title>Lucio PANEPINTO - Pac-Man</title>
+	</head>
+		
+	<body>
+	
+		<div id="sound"></div>
+	
+		<div id="help">
+			<h2>Help</h2>
+			<table align="center" border="0" cellPadding="2" cellSpacing="0">
+				<tbody>
+					<tr><td>Arrow Left : </td><td>Move Left</td></tr>
+					<tr><td>Arrow Right : </td><td>Move Right</td></tr>
+					<tr><td>Arrow Down : </td><td>Move Down</td></tr>
+					<tr><td>Arrow Up : </td><td>Move Up</td></tr>
+					<tr><td colspan="2">&nbsp;</td></tr>
+					<tr><td>P : </td><td>PAUSE</td></tr>
+				</tbody>
+			</table>
+		</div>
+	
+		<div id="home">
+			<h1>pac-man</h1>
+			<h3>Lucio PANEPINTO<br><em>2015</em></h3>
+			<canvas id="canvas-home-title-pacman"></canvas>
+			<div id="presentation">
+				<div id="presentation-titles">character &nbsp;/&nbsp; nickname</div>
+				<canvas id="canvas-presentation-blinky"></canvas><div id="presentation-character-blinky">- shadow</div><div id="presentation-name-blinky">"blinky"</div>
+				<canvas id="canvas-presentation-pinky"></canvas><div id="presentation-character-pinky">- speedy</div><div id="presentation-name-pinky">"pinky"</div>
+				<canvas id="canvas-presentation-inky"></canvas><div id="presentation-character-inky">- bashful</div><div id="presentation-name-inky">"inky"</div>
+				<canvas id="canvas-presentation-clyde"></canvas><div id="presentation-character-clyde">- pokey</div><div id="presentation-name-clyde">"clyde"</div>
+			</div>
+			<canvas id="trailer"></canvas>
+			<div class="help-button">- help -</div>
+			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="img/sound-on.png" alt="" border="0"></a>
+			<a class="github" target="_blank" href="https://github.com/luciopanepinto/pacman"><img src="img/github.png" alt="GitHub - Lucio PANEPINTO - Pac-Man"></a>
+			<a class="putchu" target="_top" href="http://www.putchu.be"><img src="http://www.putchu.be/img/intro/player.png" height="95px" alt="Putchu">www.putchu.be</a>
+		</div>
+	
+		<div id="panel">
+			<h1>pac-man</h1>
+			<a class="putchu" target="_top" href="http://www.putchu.be"><img src="http://www.putchu.be/img/intro/player.png" height="65px" alt="Putchu">www.putchu.be</a>
+			<canvas id="canvas-panel-title-pacman"></canvas>
+			<div id="score"><h2>1UP</h2><span>00</span></div>
+			<div id="highscore"><h2>High Score</h2><span>00</span></div>
+			<div id="board">
+				<canvas id="canvas-board"></canvas>
+				<canvas id="canvas-paths"></canvas>
+				<canvas id="canvas-bubbles"></canvas>
+				<canvas id="canvas-fruits"></canvas>
+				<canvas id="canvas-pacman"></canvas>
+				<canvas id="canvas-ghost-blinky"></canvas>
+				<canvas id="canvas-ghost-pinky"></canvas>
+				<canvas id="canvas-ghost-inky"></canvas>
+				<canvas id="canvas-ghost-clyde"></canvas>
+				<div id="control-up-big"></div>
+				<div id="control-down-big"></div>
+				<div id="control-left-big"></div>
+				<div id="control-right-big"></div>
+			</div>
+			<div id="control">
+				<div id="control-up"></div>
+				<div id="control-up-second"></div>
+				<div id="control-down"></div> 
+				<div id="control-down-second"></div>
+				<div id="control-left"></div>
+				<div id="control-right"></div>
+			</div>
+			<canvas id="canvas-lifes"></canvas>
+			<canvas id="canvas-level-fruits"></canvas>
+			<div id="message"></div>
+			<div class="help-button">- help -</div>
+			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="img/sound-on.png" alt="" border="0"></a>
+		</div>
+	
+	</body>
+	
 </html>

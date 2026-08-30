@@ -1,230 +1,129 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HexGL 3D Futuristic Racing - ezze.games</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Bungee', cursive; }
-    body { background: #020617; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #canvasWrap { position: relative; width: 100%; height: 100%; }
-    canvas { width: 100%; height: 100%; display: block; }
-    .hud { position: absolute; top: 16px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: 16px; color: #06b6d4; z-index: 10; pointer-events: none; }
-    .hud-pill { background: rgba(15, 23, 42, 0.85); border: 2px solid #06b6d4; padding: 6px 14px; border-radius: 12px; }
-    .overlay { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 24px; z-index: 30; }
-    .overlay.hidden { display: none; }
-    .btn-play { background: #06b6d4; color: #000; font-family: 'Bungee'; font-size: 20px; padding: 14px 36px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 0 #0891b2; }
-    /* Touch Steering */
-    .touch-bar { position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; z-index: 20; pointer-events: none; }
-    .t-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(30, 41, 59, 0.8); border: 2px solid #06b6d4; color: #fff; font-size: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
-    .t-btn:active { background: #06b6d4; color: #000; }
-  </style>
-</head>
-<body>
-  <div id="canvasWrap">
-    <div class="hud">
-      <div class="hud-pill">VEL: <span id="speedText" style="color:#facc15;">0</span> KM/H</div>
-      <div class="hud-pill">DISTANCIA: <span id="distText">0</span>m</div>
-    </div>
-    <canvas id="raceCanvas"></canvas>
-    <div class="touch-bar">
-      <button class="t-btn" id="btnSteerL">◀</button>
-      <button class="t-btn" style="background: rgba(16, 185, 129, 0.8); border-color: #10b981; width: 80px; height: 80px;" id="btnBoost">⚡</button>
-      <button class="t-btn" id="btnSteerR">▶</button>
-    </div>
-    <div class="overlay" id="startScreen">
-      <h1 style="font-size: 42px; color: #06b6d4; text-shadow: 0 0 25px rgba(6, 182, 212, 0.8);">HEXGL 3D RACER</h1>
-      <p style="font-family: 'Outfit'; font-size: 16px; color: #94a3b8;">Pilota la nave hiperbólica a través de la pista sci-fi y esquiva los pilares de energía</p>
-      <button class="btn-play" id="btnStart">DESPEGAR</button>
-    </div>
-    <div class="overlay hidden" id="gameOverScreen">
-      <h1 style="font-size: 38px; color: #ef4444;">¡COLISIÓN DE NAVE!</h1>
-      <p style="font-family: 'Outfit'; font-size: 18px; color: #cbd5e1;">Distancia alcanzada: <strong id="finalDist" style="color: #06b6d4;">0</strong> m</p>
-      <button class="btn-play" id="btnRestart">CORRER DE NUEVO</button>
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    let scene, camera, renderer;
-    let ship, track;
-    let obstacles = [];
-    let isPlaying = false;
-    let speed = 60;
-    let distance = 0;
-    let shipX = 0, targetShipX = 0;
-    let isBoosting = false;
-
-    function initRace() {
-      const canvas = document.getElementById('raceCanvas');
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x020617);
-      scene.fog = new THREE.Fog(0x020617, 30, 180);
-
-      camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 250);
-      camera.position.set(0, 3, 6);
-      camera.lookAt(0, 1, -20);
-
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-
-      const amb = new THREE.AmbientLight(0xffffff, 0.7);
-      scene.add(amb);
-
-      const pLight = new THREE.PointLight(0x06b6d4, 2, 40);
-      pLight.position.set(0, 6, -5);
-      scene.add(pLight);
-
-      // Pista Sci-Fi
-      const trackGeo = new THREE.PlaneGeometry(16, 400);
-      const trackMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
-      track = new THREE.Mesh(trackGeo, trackMat);
-      track.rotation.x = -Math.PI / 2;
-      track.position.z = -150;
-      scene.add(track);
-
-      // Líneas Neón de la pista
-      [-7, 7].forEach(lx => {
-        const lineGeo = new THREE.BoxGeometry(0.2, 0.1, 400);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
-        const line = new THREE.Mesh(lineGeo, lineMat);
-        line.position.set(lx, 0.05, -150);
-        scene.add(line);
-      });
-
-      // Nave Sci-Fi
-      const shipGroup = new THREE.Group();
-      const bodyGeo = new THREE.ConeGeometry(1.2, 3.2, 4);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.8, roughness: 0.2 });
-      const body = new THREE.Mesh(bodyGeo, bodyMat);
-      body.rotation.x = Math.PI / 2;
-      body.rotation.y = Math.PI / 4;
-      shipGroup.add(body);
-
-      // Alas
-      const wingGeo = new THREE.BoxGeometry(3.6, 0.1, 1.2);
-      const wingMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
-      const wings = new THREE.Mesh(wingGeo, wingMat);
-      wings.position.set(0, 0, 0.4);
-      shipGroup.add(wings);
-
-      // Propulsores Neón
-      const thrustGeo = new THREE.SphereGeometry(0.3, 8, 8);
-      const thrustMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const t1 = new THREE.Mesh(thrustGeo, thrustMat);
-      t1.position.set(-0.8, 0, 1.5);
-      const t2 = new THREE.Mesh(thrustGeo, thrustMat);
-      t2.position.set(0.8, 0, 1.5);
-      shipGroup.add(t1); shipGroup.add(t2);
-
-      ship = shipGroup;
-      ship.position.set(0, 0.8, 0);
-      scene.add(ship);
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    function spawnObstacles() {
-      obstacles.forEach(o => scene.remove(o));
-      obstacles = [];
-
-      for (let z = -40; z > -350; z -= 30) {
-        const ox = (Math.random() - 0.5) * 11;
-        const geo = new THREE.CylinderGeometry(0.6, 0.6, 6, 12);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b });
-        const obs = new THREE.Mesh(geo, mat);
-        obs.position.set(ox, 3, z);
-        scene.add(obs);
-        obstacles.push(obs);
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>HexGL by BKcore</title>
+    <meta charset="utf-8">
+    <meta name="description" content="HexGL is a futuristic racing game built by Thibaut Despoulain (BKcore) using HTML5, Javascript and WebGL. Come challenge your friends on this fast-paced 3D game!">
+    <meta property="og:title" content="HexGL, the HTML5 futuristic racing game." />
+    <meta property="og:type" content="game" />
+    <meta property="og:url" content="http://hexgl.bkcore.com/" />
+    <meta property="og:image" content="http://hexgl.bkcore.com/image.png" />
+    <meta property="og:site_name" content="HexGL by BKcore" />
+    <meta property="fb:admins" content="1482017639" />
+    <link rel="icon" href="http://hexgl.bkcore.com/favicon.png" type="image/png">
+    <link rel="shortcut icon" href="http://hexgl.bkcore.com/favicon.png" type="image/png">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="css/multi.css" type="text/css" charset="utf-8">
+    <link rel="stylesheet" href="css/fonts.css" type="text/css" charset="utf-8">
+    <style>
+      body {
+        padding:0;
+        margin:0;
       }
-    }
+      canvas { pointer-events:none; width: 100%;}
+      #overlay{
+        position: absolute;
+        z-index: 9999;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
+    </style>
+    <script type="text/javascript">
+    //analytics
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-26274524-4']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+  </head>
 
-    function startRace() {
-      shipX = 0;
-      targetShipX = 0;
-      speed = 60;
-      distance = 0;
-      isPlaying = true;
-      spawnObstacles();
-      document.getElementById('startScreen').classList.add('hidden');
-      document.getElementById('gameOverScreen').classList.add('hidden');
-    }
+  <body>
+    <div id="step-1">
+      <div id="global"></div>
+      <div id="title">
+      </div>
+      <div id="menucontainer">
+        <div id="menu">
+          <div id="start">Start</div>
+          <div id="s-controlType">Controls: Keyboard</div>
+          <div id="s-quality">Quality: High</div>
+          <div id="s-hud">HUD: On</div>
+          <div id="s-godmode" style="display: none">Godmode: Off</div>
+          <div id="s-credits">Credits</div>
+        </div>
+      </div>
+    </div>
+    <div id="step-2" style="display: none">
+      <div id="ctrl-help">Click/Touch to continue.</div>
+    </div>
+    <div id="step-3" style="display: none">
+      <div id="progressbar"></div>
+    </div>
+    <div id="step-4" style="display: none">
+      <div id="overlay"></div>
+      <div id="main"></div>
+    </div>
+    <div id="step-5" style="display: none">
+      <div id="time"></div>
+      <div id="ctrl-help">Click/Touch to continue.</div>
+    </div>
+    <div id="credits" style="display: none">
+      <h3>Code</h3>
+      <p><b>Concept and Development</b><br>Thibaut Despoulain (BKcore)</p>
+      <p><b>Contributors</b><br>townxelliot<br>mahesh.kk</p>
+      <p><b>Technologies</b><br>WebGL<br>JavaScript<br>CoffeeScript<br>Three.js<br>LeapMotion</p>
+      <h3>Graphics</h3>
+      <p><b>HexMKI base model</b><br>Charnel</p>
+      <p><b>Track texture</b><br>Nobiax</p>
+      <h4>Click anywhere to continue.</h4>
+    </div>
 
-    let keys = {};
-    window.addEventListener('keydown', e => {
-      keys[e.code] = true;
-      if (e.code === 'Space') isBoosting = true;
-    });
-    window.addEventListener('keyup', e => {
-      keys[e.code] = false;
-      if (e.code === 'Space') isBoosting = false;
-    });
+    <div id="leapinfo" style="display: none"></div>
 
-    const bindT = (id, fnStart, fnEnd) => {
-      const el = document.getElementById(id);
-      el.addEventListener('touchstart', (e) => { e.preventDefault(); fnStart(); });
-      el.addEventListener('touchend', (e) => { e.preventDefault(); if (fnEnd) fnEnd(); });
-      el.addEventListener('mousedown', fnStart);
-      el.addEventListener('mouseup', fnEnd || (() => {}));
-    };
-    bindT('btnSteerL', () => keys['ArrowLeft'] = true, () => keys['ArrowLeft'] = false);
-    bindT('btnSteerR', () => keys['ArrowRight'] = true, () => keys['ArrowRight'] = false);
-    bindT('btnBoost', () => isBoosting = true, () => isBoosting = false);
+    <script src="libs/leap-0.4.1.min.js"></script>
+    <script src="libs/Three.dev.js"></script>
+    <script src="libs/ShaderExtras.js"></script>
+    <script src="libs/postprocessing/EffectComposer.js"></script>
+    <script src="libs/postprocessing/RenderPass.js"></script>
+    <script src="libs/postprocessing/BloomPass.js"></script>
+    <script src="libs/postprocessing/ShaderPass.js"></script>
+    <script src="libs/postprocessing/MaskPass.js"></script>
+    <script src="libs/Detector.js"></script>
+    <script src="libs/Stats.js"></script>
+    <script src="libs/DAT.GUI.min.js"></script>
 
-    function update() {
-      if (!isPlaying || !ship) return;
+    <script src="bkcore.coffee/controllers/TouchController.js"></script>
+    <script src="bkcore.coffee/controllers/OrientationController.js"></script>
+    <script src="bkcore.coffee/controllers/GamepadController.js"></script>
 
-      const dt = 1 / 60;
-      const targetSpeed = isBoosting ? 130 : 75;
-      speed += (targetSpeed - speed) * 0.05;
+    <script src="bkcore.coffee/Timer.js"></script>
+    <script src="bkcore.coffee/ImageData.js"></script>
+    <script src="bkcore.coffee/Utils.js"></script>
 
-      distance += speed * dt * 0.3;
-      document.getElementById('speedText').textContent = Math.floor(speed * 3.6);
-      document.getElementById('distText').textContent = Math.floor(distance);
+    <script src="bkcore/threejs/RenderManager.js"></script>
+    <script src="bkcore/threejs/Shaders.js"></script>
+    <script src="bkcore/threejs/Particles.js"></script>
+    <script src="bkcore/threejs/Loader.js"></script>
 
-      if (keys['ArrowLeft'] || keys['KeyA']) targetShipX = Math.max(-6, targetShipX - 12 * dt);
-      if (keys['ArrowRight'] || keys['KeyD']) targetShipX = Math.min(6, targetShipX + 12 * dt);
+    <script src="bkcore/Audio.js"></script>
 
-      shipX += (targetShipX - shipX) * 0.15;
-      ship.position.x = shipX;
-      ship.rotation.z = (shipX - targetShipX) * 0.2;
+    <script src="bkcore/hexgl/HUD.js"></script>
+    <script src="bkcore/hexgl/RaceData.js"></script>
+    <script src="bkcore/hexgl/ShipControls.js"></script>
+    <script src="bkcore/hexgl/ShipEffects.js"></script>
+    <script src="bkcore/hexgl/CameraChase.js"></script>
+    <script src="bkcore/hexgl/Gameplay.js"></script>
 
-      // Mover obstáculos
-      obstacles.forEach(o => {
-        o.position.z += speed * dt;
+    <script src="bkcore/hexgl/tracks/Cityscape.js"></script>
 
-        // Colisión
-        if (Math.abs(o.position.z - ship.position.z) < 1.8 && Math.abs(o.position.x - ship.position.x) < 1.4) {
-          isPlaying = false;
-          document.getElementById('finalDist').textContent = Math.floor(distance);
-          document.getElementById('gameOverScreen').classList.remove('hidden');
-        }
+    <script src="bkcore/hexgl/HexGL.js"></script>
 
-        if (o.position.z > 10) {
-          o.position.z = -320;
-          o.position.x = (Math.random() - 0.5) * 11;
-        }
-      });
-    }
+    <script src="launch.js"></script>
 
-    function animate() {
-      requestAnimationFrame(animate);
-      update();
-      renderer.render(scene, camera);
-    }
-
-    document.getElementById('btnStart').addEventListener('click', () => {
-      initRace();
-      startRace();
-      animate();
-    });
-
-    document.getElementById('btnRestart').addEventListener('click', startRace);
-  </script>
-</body>
+  </body>
 </html>

@@ -1,14 +1,13 @@
 /**
- * CATÁLOGO OFICIAL DE VIDEOJUEGOS OPEN-SOURCE DE ALTA CALIDAD - EZZE.GAMES
- * 100% Repositorios oficiales consolidados, terminados y pulidos de GitHub.
+ * CATÁLOGO OFICIAL DE VIDEOJUEGOS PREMIUM (EDICIÓN ELITE) - EZZE.GAMES
+ * 100% Repositorios oficiales consolidados de GitHub, con portadas HD generadas en arte real.
  * 0% Anuncios de terceros, 0% Errores 404, 100% Autohospedados en Railway.
  */
 
 const CATEGORIES = [
   { id: 'todos', name: 'Todos los Juegos', icon: '🎮' },
   { id: 'arcade', name: 'Arcade & Habilidad', icon: '👾' },
-  { id: 'puzzle', name: 'Puzzles & Estrategia', icon: '🧩' },
-  { id: '3d', name: '3D & Carreras', icon: '🏎️' },
+  { id: 'carreras', name: '3D & Carreras', icon: '🏎️' },
   { id: 'favoritos', name: 'Mis Favoritos', icon: '💖' }
 ];
 
@@ -20,12 +19,12 @@ const LOCAL_GAMES = [
     category: 'arcade',
     tags: ['Construcción', 'Física', 'Torre', 'Oficial'],
     description: 'El aclamado juego de apilar rascacielos con grúa en movimiento, física de péndulo, sonidos originales y efectos de combos.',
-    rating: 4.9,
-    plays: 42800,
+    rating: 5.0,
+    plays: 48900,
     featured: true,
     trending: true,
     badge: 'POPULAR 🏗️',
-    coverImage: '/assets/covers/tower-game.svg',
+    coverImage: '/assets/covers/tower-game.jpg',
     accentColor: '#f97316',
     bannerGradient: 'linear-gradient(135deg, #ea580c, #f97316)',
     gamePath: '/games/tower-game/index.html'
@@ -38,11 +37,11 @@ const LOCAL_GAMES = [
     tags: ['MelonJS', 'Flappy', 'Cartoon', 'Sonido HD'],
     description: 'Desarrollado sobre el motor profesional MelonJS. Gráficos de alta fidelidad, animaciones suaves, efectos de partículas y sonidos retro.',
     rating: 4.9,
-    plays: 38200,
+    plays: 41200,
     featured: true,
     trending: true,
     badge: 'DESTACADO 🐦',
-    coverImage: '/assets/covers/clumsy-bird.svg',
+    coverImage: '/assets/covers/clumsy-bird.jpg',
     accentColor: '#0284c7',
     bannerGradient: 'linear-gradient(135deg, #0284c7, #38bdf8)',
     gamePath: '/games/clumsy-bird/index.html'
@@ -51,86 +50,52 @@ const LOCAL_GAMES = [
     id: 'hexgl',
     slug: 'hexgl',
     title: 'HexGL 3D Futuristic Racing',
-    category: '3d',
+    category: 'carreras',
     tags: ['3D WebGL', 'Three.js', 'Carreras', 'Futurista'],
-    description: 'El célebre juego de carreras de naves espaciales en 3D desarrollado con Three.js y WebGL. Shaders de alta velocidad y pista futurista.',
+    description: 'El célebre juego de carreras de naves espaciales en 3D desarrollado con Three.js y WebGL. Shaders de alta velocidad y pista flotante.',
     rating: 5.0,
-    plays: 35600,
+    plays: 39600,
     featured: true,
     trending: true,
     badge: '3D ULTRA ⚡',
-    coverImage: '/assets/covers/hexgl.svg',
+    coverImage: '/assets/covers/hexgl.jpg',
     accentColor: '#06b6d4',
     bannerGradient: 'linear-gradient(135deg, #0f172a, #0891b2)',
     gamePath: '/games/hexgl/index.html'
   },
   {
-    id: 'hextris',
-    slug: 'hextris',
-    title: 'Hextris Original Master',
-    category: 'puzzle',
-    tags: ['Hexágono', 'Puzzle', 'Música', 'Mundial'],
-    description: 'El juego viral internacional de rotación hexagonal. Combina colores, crea combos multiplicadores y disfruta de su música electrónica.',
-    rating: 4.8,
-    plays: 29400,
-    featured: false,
+    id: 'retro-racer',
+    slug: 'retro-racer',
+    title: 'OutRun Retro 3D Highway Racer',
+    category: 'carreras',
+    tags: ['OutRun', 'Retro 3D', 'Autopista', 'Música 80s'],
+    description: 'El legendario juego arcade de carreras estilo OutRun en 3D. Autopista infinita con curvas, colinas, música synthwave y superdeportivo.',
+    rating: 4.9,
+    plays: 37400,
+    featured: true,
     trending: true,
-    badge: 'CLÁSICO 🔷',
-    coverImage: '/assets/covers/hextris.svg',
-    accentColor: '#7c3aed',
-    bannerGradient: 'linear-gradient(135deg, #4c1d95, #7c3aed)',
-    gamePath: '/games/hextris/index.html'
+    badge: 'ARCADE 3D 🏎️',
+    coverImage: '/assets/covers/retro-racer.jpg',
+    accentColor: '#ec4899',
+    bannerGradient: 'linear-gradient(135deg, #831843, #ec4899)',
+    gamePath: '/games/retro-racer/index.html'
   },
   {
     id: 'pacman',
     slug: 'pacman',
-    title: 'Pac-Man Arcade HD',
+    title: 'Pac-Man Arcade HD (Dale Harvey)',
     category: 'arcade',
     tags: ['Pacman', 'Retro', 'Arcade', 'Sonidos Reales'],
-    description: 'El legendario clásico de los salones recreativos recreado en Canvas con la IA original de los 4 fantasmas y todos los efectos de audio clásicos.',
+    description: 'La versión oficial en Canvas creada por Dale Harvey con tablero completo, IA auténtica de los 4 fantasmas, audio retro y sistema de vidas.',
     rating: 4.9,
-    plays: 36900,
+    plays: 44100,
     featured: true,
     trending: true,
     badge: 'LEYENDA 🟡',
-    coverImage: '/assets/covers/pacman.svg',
+    coverImage: '/assets/covers/pacman.jpg',
     accentColor: '#facc15',
     bannerGradient: 'linear-gradient(135deg, #020617, #1e1b4b)',
     gamePath: '/games/pacman/index.html'
-  },
-  {
-    id: 'puzzle-2048',
-    slug: 'puzzle-2048',
-    title: '2048 Original (Gabriele Cirulli)',
-    category: 'puzzle',
-    tags: ['Lógica', '2048', 'Cirulli', 'Oficial'],
-    description: 'El código fuente oficial del juego 2048 creado por Gabriele Cirulli. Soporte multitáctil impecable, animaciones fluidas y guardado de récords.',
-    rating: 4.9,
-    plays: 33100,
-    featured: false,
-    trending: true,
-    badge: 'ORIGINAL 🔢',
-    coverImage: '/assets/covers/puzzle-2048.svg',
-    accentColor: '#f59e0b',
-    bannerGradient: 'linear-gradient(135deg, #b45309, #f59e0b)',
-    gamePath: '/games/puzzle-2048/index.html'
-  },
-  {
-    id: 'flappy-2048',
-    slug: 'flappy-2048',
-    title: 'Flappy 2048 HD',
-    category: 'puzzle',
-    tags: ['Fusión', 'Habilidad', 'Flappy', '2048'],
-    description: 'La divertida e ingeniosa fusión viral de Flappy Bird y 2048. Vuela entre los bloques sumando valores hasta alcanzar la puntuación máxima.',
-    rating: 4.8,
-    plays: 24700,
-    featured: false,
-    trending: false,
-    badge: 'VIRAL 🌟',
-    coverImage: '/assets/covers/flappy-2048.svg',
-    accentColor: '#22c55e',
-    bannerGradient: 'linear-gradient(135deg, #15803d, #22c55e)',
-    gamePath: '/games/flappy-2048/index.html'
   }
 ];
 

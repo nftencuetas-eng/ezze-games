@@ -1,13 +1,11 @@
 const http = require('http');
 
 const games = [
-  { slug: 'tower-game', cover: '/assets/covers/tower-game.svg' },
-  { slug: 'clumsy-bird', cover: '/assets/covers/clumsy-bird.svg' },
-  { slug: 'hexgl', cover: '/assets/covers/hexgl.svg' },
-  { slug: 'hextris', cover: '/assets/covers/hextris.svg' },
-  { slug: 'pacman', cover: '/assets/covers/pacman.svg' },
-  { slug: 'puzzle-2048', cover: '/assets/covers/puzzle-2048.svg' },
-  { slug: 'flappy-2048', cover: '/assets/covers/flappy-2048.svg' }
+  { slug: 'tower-game', cover: '/assets/covers/tower-game.jpg' },
+  { slug: 'clumsy-bird', cover: '/assets/covers/clumsy-bird.jpg' },
+  { slug: 'hexgl', cover: '/assets/covers/hexgl.jpg' },
+  { slug: 'retro-racer', cover: '/assets/covers/retro-racer.jpg' },
+  { slug: 'pacman', cover: '/assets/covers/pacman.jpg' }
 ];
 
 function checkUrl(path) {
@@ -21,7 +19,7 @@ function checkUrl(path) {
 }
 
 async function run() {
-  console.log('=== VERIFICANDO LOS 7 JUEGOS OFICIALES DE GITHUB ===');
+  console.log('=== VERIFICANDO LOS 5 JUEGOS ELITE Y PORTADAS HD REALES ===');
   let errCount = 0;
   for (const g of games) {
     const gameRes = await checkUrl(`/games/${g.slug}/index.html`);
@@ -30,7 +28,7 @@ async function run() {
     if (!ok) errCount++;
     console.log(`[${ok ? 'OK' : 'FAIL'}] ${g.slug} | Game: ${gameRes.status} | Cover: ${coverRes.status}`);
   }
-  console.log('====================================================');
+  console.log('===========================================================');
   console.log(`Total: ${games.length} | Fallos: ${errCount}`);
 }
 

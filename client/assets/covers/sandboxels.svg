@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <circle cx="560" cy="220" r="30" fill="#facc15" filter="url(#glow)"/>
+  <circle cx="640" cy="240" r="40" fill="#ef4444" filter="url(#glow)"/>
+  <circle cx="720" cy="220" r="30" fill="#38bdf8" filter="url(#glow)"/>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="74" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">SANDBOXELS</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#94a3b8" letter-spacing="6">ELEMENTS PHYSICS SIMULATOR</text>
+</svg>

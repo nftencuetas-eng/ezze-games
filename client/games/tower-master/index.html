@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tower Master - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Bungee', cursive; }
+    body { background: #0f172a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #canvasWrap { position: relative; width: 100%; height: 100%; max-width: 480px; max-height: 800px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 70%, #fde047 100%); }
+    .hud { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; font-size: 16px; color: #0284c7; z-index: 10; pointer-events: none; }
+    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; z-index: 20; }
+    .overlay.hidden { display: none; }
+    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 20px; padding: 14px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 0 #ca8a04; }
+  </style>
+</head>
+<body>
+  <div id="canvasWrap">
+    <div class="hud">
+      <div>PISOS: <span id="floorText" style="color: #f97316;">0</span></div>
+      <div>RÉCORD: <span id="bestText" style="color: #0284c7;">0</span></div>
+    </div>
+    <canvas id="towerCanvas" width="400" height="650"></canvas>
+    <div class="overlay" id="startScreen">
+      <h1 style="font-size: 40px; color: #facc15; text-shadow: 0 0 20px rgba(250, 204, 21, 0.6);">TOWER MASTER</h1>
+      <p style="font-family: 'Outfit'; font-size: 15px; color: #94a3b8;">¡Toca la pantalla para soltar el bloque y construir la torre más alta!</p>
+      <button class="btn-play" id="btnStart">CONSTRUIR</button>
+    </div>
+    <div class="overlay hidden" id="gameOverScreen">
+      <h1 style="font-size: 34px; color: #ef4444;">¡LA TORRE SE CAYÓ!</h1>
+      <p style="font-family: 'Outfit'; font-size: 18px; color: #cbd5e1;">Pisos construidos: <strong id="finalScore" style="color: #facc15;">0</strong></p>
+      <button class="btn-play" id="btnRestart">JUGAR DE NUEVO</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('towerCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7', '#ec4899'];
+    let stack = [];
+    let currentBlock = null;
+    let score = 0;
+    let best = parseInt(localStorage.getItem('tower_best') || '0');
+    document.getElementById('bestText').textContent = best;
+    let isPlaying = false;
+    let camY = 0;
+
+    function startGame() {
+      stack = [{ x: 100, y: 550, w: 200, h: 40, color: '#3b82f6' }];
+      score = 0;
+      camY = 0;
+      isPlaying = true;
+      document.getElementById('floorText').textContent = '0';
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      spawnBlock();
+    }
+
+    function spawnBlock() {
+      const prev = stack[stack.length - 1];
+      const color = COLORS[stack.length % COLORS.length];
+      currentBlock = {
+        x: 0,
+        y: prev.y - 40,
+        w: prev.w,
+        h: 40,
+        color,
+        vx: 4 + Math.min(6, stack.length * 0.15)
+      };
+    }
+
+    function dropBlock() {
+      if (!isPlaying || !currentBlock) return;
+
+      const prev = stack[stack.length - 1];
+      const diff = currentBlock.x - prev.x;
+
+      if (Math.abs(diff) >= currentBlock.w) {
+        // Falló completamente
+        isPlaying = false;
+        if (score > best) {
+          best = score;
+          localStorage.setItem('tower_best', best);
+        }
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+        return;
+      }
+
+      // Recortar bloque
+      if (diff > 0) {
+        currentBlock.w -= diff;
+      } else {
+        currentBlock.w += diff;
+        currentBlock.x = prev.x;
+      }
+
+      stack.push(currentBlock);
+      score++;
+      document.getElementById('floorText').textContent = score;
+
+      // Subir cámara
+      if (stack.length > 5) {
+        camY = (stack.length - 5) * 40;
+      }
+
+      spawnBlock();
+    }
+
+    window.addEventListener('keydown', e => { if (e.code === 'Space') dropBlock(); });
+    window.addEventListener('touchstart', (e) => { e.preventDefault(); dropBlock(); }, { passive: false });
+    window.addEventListener('mousedown', dropBlock);
+
+    document.getElementById('btnStart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+    document.getElementById('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+
+    function update() {
+      if (!isPlaying || !currentBlock) return;
+
+      currentBlock.x += currentBlock.vx;
+      if (currentBlock.x + currentBlock.w > canvas.width || currentBlock.x < 0) {
+        currentBlock.vx *= -1;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(0, camY);
+
+      // Suelo
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(0, 590, canvas.width, 100);
+
+      // Bloques colocados
+      stack.forEach(b => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+        ctx.strokeRect(b.x, b.y, b.w, b.h);
+      });
+
+      // Bloque en movimiento
+      if (currentBlock) {
+        ctx.fillStyle = currentBlock.color;
+        ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+        ctx.strokeRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
+      }
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14532d" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <rect x="560" y="140" width="160" height="220" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="4" filter="url(#glow)"/>
+  <text x="640" y="270" font-size="72" text-anchor="middle" fill="#dc2626">♠</text>
+  <text x="640" y="450" font-family="'Bungee', sans-serif" font-size="68" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">SOLITARIO KLONDIKE</text>
+  <text x="640" y="520" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fff" letter-spacing="6">CLASSIC CARD PATIENCE</text>
+</svg>

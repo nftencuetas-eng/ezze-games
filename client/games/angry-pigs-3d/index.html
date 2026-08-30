@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Angry Pigs 3D - Gran Escala & Cerdos Realistas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --primary: #2ecc71;
+      --accent: #f1c40f;
+      --danger: #e74c3c;
+      --dark: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Bungee', 'Outfit', sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+    }
+
+    canvas#threeCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* Viñeta de impacto */
+    .impact-vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.4);
+      transition: box-shadow 0.1s ease;
+      z-index: 5;
+    }
+
+    .impact-vignette.hit {
+      box-shadow: inset 0 0 140px rgba(231, 76, 60, 0.75);
+    }
+
+    .impact-vignette.tnt {
+      box-shadow: inset 0 0 180px rgba(241, 196, 15, 0.85);
+    }
+
+    /* Líneas de acción estilo cómic */
+    .comic-action-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle, transparent 35%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0.45) 100%);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 6;
+    }
+
+    .comic-action-lines.active {
+      opacity: 1;
+      animation: pulseLines 0.25s infinite alternate;
+    }
+
+    @keyframes pulseLines {
+      from { transform: scale(1); }
+      to { transform: scale(1.03); }
+    }
+
+    /* Carteles flotantes */
+    .comic-pop {
+      position: absolute;
+      pointer-events: none;
+      font-family: 'Bungee', cursive;
+      font-size: 42px;
+      color: #ffd700;
+      text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 25px rgba(255,215,0,0.85);
+      transform: translate(-50%, -50%) scale(0.5) rotate(-8deg);
+      animation: popAnim 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      z-index: 25;
+      white-space: nowrap;
+    }
+
+    @keyframes popAnim {
+      0% { transform: translate(-50%, -50%) scale(0.3) rotate(-15deg); opacity: 0; }
+      35% { transform: translate(-50%, -50%) scale(1.35) rotate(6deg); opacity: 1; }
+      75% { transform: translate(-50%, -85%) scale(1.1) rotate(-4deg); opacity: 1; }
+      100% { transform: translate(-50%, -120%) scale(0.9) rotate(0deg); opacity: 0; }
+    }
+
+    /* HUD Superior */
+    .hud {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .hud-card {
+      background: rgba(15, 23, 42, 0.88);
+      border: 3px solid #3b82f6;
+      border-radius: 16px;
+      padding: 10px 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      pointer-events: auto;
+    }
+
+    .hud-title {
+      font-size: 13px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hud-score {
+      font-size: 28px;
+      color: var(--accent);
+      text-shadow: 2px 2px #000;
+    }
+
+    .level-tag {
+      font-size: 18px;
+      color: var(--primary);
+      text-shadow: 2px 2px #000;
+    }
+
+    .hud-buttons {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .btn-hud {
+      background: linear-gradient(180deg, #334155, #1e293b);
+      border: 2px solid #64748b;
+      color: #fff;
+      font-family: 'Bungee', cursive;
+      font-size: 13px;
+      padding: 9px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #0f172a;
+      transition: all 0.1s ease;
+    }
+
+    .btn-hud:hover {
+      background: linear-gradient(180deg, #475569, #334155);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #0f172a;
+    }
+
+    .btn-hud:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #0f172a;
+    }
+
+    /* Panel de Disparo Rápido (1 Clic) */
+    .quick-launch-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 3px solid #f1c40f;
+      border-radius: 18px;
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      pointer-events: auto;
+    }
+
+    .launch-title {
+      font-size: 12px;
+      color: #cbd5e1;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .btn-launch {
+      background: linear-gradient(180deg, #f39c12, #d35400);
+      color: #fff;
+      font-family: 'Bungee', cursive;
+      font-size: 13px;
+      padding: 10px 16px;
+      border: 2px solid #fff;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #962d00;
+      transition: all 0.1s ease;
+    }
+
+    .btn-launch:hover {
+      background: linear-gradient(180deg, #f1c40f, #e67e22);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #962d00;
+    }
+
+    .btn-launch:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #962d00;
+    }
+
+    /* Badge Slow-Mo */
+    .slow-mo-badge {
+      position: absolute;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(231, 76, 60, 0.95);
+      border: 3px solid #fff;
+      border-radius: 25px;
+      padding: 8px 24px;
+      font-size: 15px;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(231, 76, 60, 0.9);
+      pointer-events: none;
+      z-index: 20;
+      display: none;
+      animation: pulseBadge 0.35s infinite alternate;
+    }
+
+    @keyframes pulseBadge {
+      from { transform: translateX(-50%) scale(1); }
+      to { transform: translateX(-50%) scale(1.1); }
+    }
+
+    /* Indicador de zona táctil */
+    .touch-sling-zone {
+      position: absolute;
+      top: 50%;
+      left: 18%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      border: 3px dashed rgba(241, 196, 15, 0.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+      animation: rotateRing 8s linear infinite;
+    }
+
+    @keyframes rotateRing {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .aim-hint {
+      position: absolute;
+      top: calc(50% + 85px);
+      left: 18%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.75);
+      padding: 6px 14px;
+      border-radius: 12px;
+      border: 1px solid #ffd700;
+      color: #ffd700;
+      font-size: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    /* Modales */
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 15, 26, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal-box {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 4px solid #f1c40f;
+      border-radius: 24px;
+      padding: 32px 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 40px rgba(241, 196, 15, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .modal-header {
+      font-size: 32px;
+      color: #f1c40f;
+      text-shadow: 3px 3px #000, 0 0 20px rgba(241, 196, 15, 0.7);
+    }
+
+    .modal-header.defeat {
+      color: #e74c3c;
+      text-shadow: 3px 3px #000, 0 0 20px rgba(231, 76, 60, 0.7);
+    }
+
+    .btn-main {
+      background: linear-gradient(180deg, #2ecc71, #27ae60);
+      color: #fff;
+      font-family: 'Bungee', cursive;
+      font-size: 18px;
+      padding: 16px 28px;
+      border: 3px solid #fff;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #1e8449, 0 15px 25px rgba(0,0,0,0.5);
+      transition: all 0.1s ease;
+      width: 100%;
+    }
+
+    .btn-main:hover {
+      background: linear-gradient(180deg, #34e77e, #2ecc71);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 0 #1e8449, 0 20px 30px rgba(46, 204, 113, 0.4);
+    }
+
+    .btn-main:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #1e8449;
+    }
+
+    .stars-box {
+      display: flex;
+      gap: 16px;
+      font-size: 54px;
+      margin: 8px 0;
+    }
+
+    .star-icon {
+      filter: grayscale(100%) opacity(30%);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .star-icon.active {
+      filter: grayscale(0%) opacity(100%);
+      transform: scale(1.2);
+      text-shadow: 0 0 30px rgba(241, 196, 15, 0.9);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="gameContainer">
+    <canvas id="threeCanvas"></canvas>
+    <div class="impact-vignette" id="impactVignette"></div>
+    <div class="comic-action-lines" id="comicActionLines"></div>
+    <div class="slow-mo-badge" id="slowMoBadge">🎬 ZOOM DE IMPACTO (SLOW-MO)</div>
+
+    <!-- Indicador de zona táctil -->
+    <div class="touch-sling-zone" id="touchSlingZone"></div>
+    <div class="aim-hint" id="aimHint">👈 TOCA Y ARRASTRA AQUÍ</div>
+
+    <!-- HUD Superior -->
+    <div class="hud">
+      <div class="hud-card">
+        <span class="level-tag" id="hudLevelName">NIVEL 1</span>
+        <div>
+          <span class="hud-title">Puntos: </span>
+          <span class="hud-score" id="hudScore">0</span>
+        </div>
+      </div>
+
+      <div class="hud-buttons">
+        <button id="btnToggleCam" class="btn-hud">🎥 CÁMARA</button>
+        <button id="btnSound" class="btn-hud">🔊 SONIDO</button>
+        <button id="btnRestart" class="btn-hud">🔄 REINICIAR</button>
+      </div>
+    </div>
+
+    <!-- Panel de Disparo 1-Clic para Gran Escala -->
+    <div class="quick-launch-bar">
+      <span class="launch-title">🚀 DISPARO ÉPICO:</span>
+      <button class="btn-launch" id="btnLaunchDirect">🎯 LARGO DIRECTO</button>
+      <button class="btn-launch" id="btnLaunchArc">🏹 PARABÓLICO ALTO</button>
+      <button class="btn-launch" id="btnLaunchPower">⚡ SUPER DEMOLICIÓN</button>
+    </div>
+
+    <!-- Modal de Victoria -->
+    <div id="victoryModal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <h2 class="modal-header">🏆 ¡VICTORIA TOTAL! 🏆</h2>
+        <div class="stars-box">
+          <span class="star-icon" id="s1">⭐</span>
+          <span class="star-icon" id="s2">⭐</span>
+          <span class="star-icon" id="s3">⭐</span>
+        </div>
+        <p style="font-size: 18px; color: #fff;">Puntos: <strong id="vicScore" style="color: #f1c40f;">0</strong></p>
+        <button id="btnNextLevel" class="btn-main">SIGUIENTE NIVEL ▶</button>
+      </div>
+    </div>
+
+    <!-- Modal de Derrota -->
+    <div id="defeatModal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <h2 class="modal-header defeat">💀 ¡SIN MUNICIÓN! 💀</h2>
+        <p style="font-family: 'Outfit', sans-serif; font-size: 15px; color: #a4b0be;">
+          Las aves sobrevivieron a la demolición. ¡Inténtalo de nuevo!
+        </p>
+        <button id="btnRetry" class="btn-main">🔄 REINTENTAR NIVEL</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * MOTOR DE AUDIO PROCEDURAL
+     */
+    class AudioEngineMassive {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+      }
+
+      playStretch() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(320, this.ctx.currentTime + 0.08);
+        g.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      }
+
+      playLaunch() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.linearRampToValueAtTime(650, now + 0.12);
+        osc.frequency.linearRampToValueAtTime(250, now + 0.35);
+        g.gain.setValueAtTime(0.3, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.36);
+      }
+
+      playHit() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+        g.gain.setValueAtTime(0.35, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+
+      playBoing() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(750, now + 0.2);
+        g.gain.setValueAtTime(0.25, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.23);
+      }
+
+      playExplosion() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(15, now + 0.7);
+        g.gain.setValueAtTime(0.6, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.8);
+      }
+
+      playVictory() {
+        if (!this.enabled || !this.ctx) return;
+        this.init();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((f, i) => {
+          const now = this.ctx.currentTime + i * 0.12;
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(0.3, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        });
+      }
+    }
+
+    /**
+     * TEXTURAS PROCEDURALES DETALLADAS
+     */
+    function createWoodTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b07238';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#915923';
+      for (let i = 0; i < 512; i += 24) ctx.fillRect(0, i, 512, 6);
+      ctx.fillStyle = '#5c3818';
+      ctx.strokeRect(6, 6, 500, 500);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createStoneTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#7f8c8d';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#95a5a6';
+      for (let y = 0; y < 512; y += 96) {
+        for (let x = 0; x < 512; x += 170) {
+          const off = (y / 96) % 2 === 0 ? 0 : 85;
+          ctx.strokeRect(x + off, y, 170, 96);
+        }
+      }
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(4, 4, 504, 504);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createGrassTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#2ecc71';
+      for (let i = 0; i < 1200; i++) ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 8);
+      ctx.fillStyle = '#1e8449';
+      for (let i = 0; i < 600; i++) ctx.fillRect(Math.random() * 512, Math.random() * 512, 6, 6);
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(40, 40);
+      return tex;
+    }
+
+    /**
+     * NIVELES 3D A GRAN ESCALA (DISTANCIA ÉPICA EN EL VALLE)
+     */
+    const LEVELS_MASSIVE = [
+      {
+        name: "Nivel 1: Fuerte del Valle (Gran Escala)",
+        pigs: ['classic', 'rocket', 'bomb'],
+        targets: [
+          { x: 80, y: 4, z: -3, r: 2.2, isKing: false },
+          { x: 80, y: 4, z: 3, r: 2.2, isKing: false },
+          { x: 80, y: 13, z: 0, r: 2.2, isKing: false }
+        ],
+        blocks: [
+          { x: 80, y: 4.5, z: -6, w: 2.4, h: 9, d: 2.4, mat: 'wood' },
+          { x: 80, y: 4.5, z: 6, w: 2.4, h: 9, d: 2.4, mat: 'wood' },
+          { x: 80, y: 4.5, z: 0, w: 2.4, h: 9, d: 2.4, mat: 'wood' },
+          { x: 80, y: 9.8, z: 0, w: 3.2, h: 1.6, d: 15, mat: 'wood' },
+          { x: 80, y: 14, z: -3, w: 2, h: 7, d: 2, mat: 'wood' },
+          { x: 80, y: 14, z: 3, w: 2, h: 7, d: 2, mat: 'wood' },
+          { x: 80, y: 18.2, z: 0, w: 2.8, h: 1.4, d: 9, mat: 'wood' }
+        ]
+      },
+      {
+        name: "Nivel 2: Bastión de Piedra y TNT Masivo",
+        pigs: ['bomb', 'rocket', 'triple'],
+        targets: [
+          { x: 85, y: 4, z: -4, r: 2.2, isKing: false },
+          { x: 85, y: 4, z: 4, r: 2.2, isKing: false },
+          { x: 85, y: 14, z: 0, r: 2.6, isKing: false }
+        ],
+        blocks: [
+          { x: 85, y: 5.5, z: -7, w: 3, h: 11, d: 3, mat: 'stone' },
+          { x: 85, y: 5.5, z: 7, w: 3, h: 11, d: 3, mat: 'stone' },
+          { x: 85, y: 2.5, z: 0, w: 4, h: 4, d: 4, mat: 'tnt' },
+          { x: 85, y: 11.5, z: 0, w: 3.8, h: 2, d: 18, mat: 'stone' },
+          { x: 85, y: 15.5, z: -3.5, w: 2.2, h: 6, d: 2.2, mat: 'wood' },
+          { x: 85, y: 15.5, z: 3.5, w: 2.2, h: 6, d: 2.2, mat: 'wood' },
+          { x: 85, y: 19.2, z: 0, w: 3, h: 1.5, d: 10, mat: 'wood' }
+        ]
+      },
+      {
+        name: "Nivel 3: Ciudadela Real del Rey Gallo",
+        pigs: ['rocket', 'bomb', 'triple', 'classic'],
+        targets: [
+          { x: 90, y: 16, z: 0, r: 3.2, isKing: true },
+          { x: 90, y: 4, z: -5, r: 2.2, isKing: false },
+          { x: 90, y: 4, z: 5, r: 2.2, isKing: false }
+        ],
+        blocks: [
+          { x: 90, y: 6, z: -8, w: 3.2, h: 12, d: 3.2, mat: 'stone' },
+          { x: 90, y: 6, z: 8, w: 3.2, h: 12, d: 3.2, mat: 'stone' },
+          { x: 90, y: 3, z: -2.5, w: 3.2, h: 4, d: 3.2, mat: 'tnt' },
+          { x: 90, y: 3, z: 2.5, w: 3.2, h: 4, d: 3.2, mat: 'tnt' },
+          { x: 90, y: 12.5, z: 0, w: 4.2, h: 2.2, d: 20, mat: 'stone' },
+          { x: 90, y: 15.5, z: -3.5, w: 1.8, h: 5, d: 1.8, mat: 'glass' },
+          { x: 90, y: 15.5, z: 3.5, w: 1.8, h: 5, d: 1.8, mat: 'glass' },
+          { x: 90, y: 18.8, z: 0, w: 3, h: 1.5, d: 10, mat: 'wood' }
+        ]
+      }
+    ];
+
+    /**
+     * CLASE PRINCIPAL DEL JUEGO
+     */
+    class MassiveAngryPigsGame {
+      constructor() {
+        this.canvas = document.getElementById('threeCanvas');
+        this.container = document.getElementById('gameContainer');
+        this.audio = new AudioEngineMassive();
+
+        this.score = 0;
+        this.currentLevel = 0;
+        this.state = 'IDLE';
+
+        this.pigsQueue = [];
+        this.activePig = null;
+        this.flyingPigs = [];
+        this.blocks = [];
+        this.targets = [];
+        this.debris = [];
+
+        this.camMode = 'follow';
+        // Posición de cámara inicial amplia
+        this.targetCamPos = new THREE.Vector3(-45, 20, 38);
+        this.targetCamLook = new THREE.Vector3(20, 10, 0);
+
+        this.initThree();
+        this.initMassiveEnvironment();
+        this.initSlingshot();
+        this.initDOM();
+        this.initPointerControls();
+
+        this.loadLevel(0);
+
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.animate(t));
+      }
+
+      initThree() {
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color('#68b7dc');
+        this.scene.fog = new THREE.FogExp2('#8ec5db', 0.004);
+
+        this.camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 1, 800);
+        this.camera.position.set(-45, 20, 38);
+        this.camera.lookAt(20, 10, 0);
+
+        // Iluminación
+        const hemiLight = new THREE.HemisphereLight('#fefefe', '#3b6a4a', 0.7);
+        this.scene.add(hemiLight);
+
+        this.dirLight = new THREE.DirectionalLight('#fff5ea', 1.3);
+        this.dirLight.position.set(-50, 80, 50);
+        this.dirLight.castShadow = true;
+        this.dirLight.shadow.mapSize.width = 2048;
+        this.dirLight.shadow.mapSize.height = 2048;
+        this.dirLight.shadow.camera.left = -90;
+        this.dirLight.shadow.camera.right = 140;
+        this.dirLight.shadow.camera.top = 90;
+        this.dirLight.shadow.camera.bottom = -40;
+        this.dirLight.shadow.camera.far = 300;
+        this.scene.add(this.dirLight);
+
+        // Texturas
+        this.woodTex = createWoodTexture();
+        this.stoneTex = createStoneTexture();
+        const grassTex = createGrassTexture();
+
+        // Terreno Masivo del Valle (800x600)
+        const groundGeo = new THREE.PlaneGeometry(800, 600);
+        const groundMat = new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.85 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        window.addEventListener('resize', () => {
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+      }
+
+      initMassiveEnvironment() {
+        // 1. Colina de la Resortera (Elevación)
+        const hillGeo = new THREE.CylinderGeometry(8, 16, 8, 16);
+        const hillMat = new THREE.MeshStandardMaterial({ color: '#27ae60', roughness: 0.9 });
+        const hill = new THREE.Mesh(hillGeo, hillMat);
+        hill.position.set(-35, 4, 0);
+        hill.receiveShadow = true;
+        this.scene.add(hill);
+
+        // 2. Montañas Gigantescas en el Horizonte
+        const mtnMat = new THREE.MeshStandardMaterial({ color: '#576574', roughness: 0.95 });
+        const snowMat = new THREE.MeshStandardMaterial({ color: '#f1f2f6', roughness: 0.8 });
+
+        for (let i = 0; i < 14; i++) {
+          const mtnGroup = new THREE.Group();
+          const height = Math.random() * 50 + 60;
+          const radius = Math.random() * 30 + 35;
+          const mtnGeo = new THREE.ConeGeometry(radius, height, 7);
+          const mtn = new THREE.Mesh(mtnGeo, mtnMat);
+          mtn.position.y = height / 2;
+          mtnGroup.add(mtn);
+
+          // Cima nevada
+          const snowGeo = new THREE.ConeGeometry(radius * 0.35, height * 0.35, 7);
+          const snow = new THREE.Mesh(snowGeo, snowMat);
+          snow.position.y = height - height * 0.175;
+          mtnGroup.add(snow);
+
+          const mx = (i - 7) * 45 + (Math.random() - 0.5) * 20;
+          const mz = -140 - Math.random() * 50;
+          mtnGroup.position.set(mx, 0, mz);
+          this.scene.add(mtnGroup);
+        }
+
+        // 3. Más de 60 Árboles 3D en el Valle
+        for (let i = 0; i < 65; i++) {
+          const tree = this.createRealisticTree();
+          const tx = (Math.random() - 0.3) * 200;
+          const tz = (Math.random() - 0.5) * 160;
+          // Evitar la zona central de tiro
+          if (Math.abs(tz) > 12 || tx < -40 || tx > 110) {
+            tree.position.set(tx, 0, tz);
+            this.scene.add(tree);
+          }
+        }
+      }
+
+      createRealisticTree() {
+        const g = new THREE.Group();
+        const tMat = new THREE.MeshStandardMaterial({ color: '#4b2c11', roughness: 0.9 });
+        const lMat = new THREE.MeshStandardMaterial({ color: '#1b4332', roughness: 0.7 });
+
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 8, 8), tMat);
+        trunk.position.y = 4;
+        trunk.castShadow = true;
+        g.add(trunk);
+
+        for (let i = 0; i < 3; i++) {
+          const leaves = new THREE.Mesh(new THREE.ConeGeometry(4.5 - i * 0.9, 6, 8), lMat);
+          leaves.position.y = 6.5 + i * 3.2;
+          leaves.castShadow = true;
+          g.add(leaves);
+        }
+        const s = Math.random() * 0.5 + 0.8;
+        g.scale.set(s, s, s);
+        return g;
+      }
+
+      initSlingshot() {
+        this.slingshotGroup = new THREE.Group();
+        this.slingshotPos = new THREE.Vector3(-35, 8, 0); // Encima de la colina
+        this.slingshotGroup.position.copy(this.slingshotPos);
+
+        const woodMat = new THREE.MeshStandardMaterial({ map: this.woodTex, roughness: 0.8 });
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 9, 12), woodMat);
+        post.position.y = 4.5;
+        post.castShadow = true;
+        this.slingshotGroup.add(post);
+
+        const armGeo = new THREE.CylinderGeometry(0.6, 0.6, 5.5, 10);
+        const armL = new THREE.Mesh(armGeo, woodMat);
+        armL.position.set(0, 9.5, -2.4);
+        armL.rotation.x = -0.3;
+        armL.castShadow = true;
+
+        const armR = new THREE.Mesh(armGeo, woodMat);
+        armR.position.set(0, 9.5, 2.4);
+        armR.rotation.x = 0.3;
+        armR.castShadow = true;
+
+        this.slingshotGroup.add(armL, armR);
+        this.scene.add(this.slingshotGroup);
+
+        this.prongL = new THREE.Vector3(-35, 19.5, -3.2);
+        this.prongR = new THREE.Vector3(-35, 19.5, 3.2);
+
+        const bandMat = new THREE.MeshBasicMaterial({ color: '#2f1a04' });
+        this.bandL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1, 8), bandMat);
+        this.bandR = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1, 8), bandMat);
+        this.scene.add(this.bandL, this.bandR);
+        this.updateBands(new THREE.Vector3(-35, 19.5, 0));
+      }
+
+      updateBands(pouchPos) {
+        this.positionCylinder(this.bandL, this.prongL, pouchPos);
+        this.positionCylinder(this.bandR, this.prongR, pouchPos);
+      }
+
+      positionCylinder(mesh, p1, p2) {
+        const dir = new THREE.Vector3().subVectors(p2, p1);
+        const len = dir.length();
+        mesh.scale.set(1, len, 1);
+        mesh.position.copy(p1).addScaledVector(dir, 0.5);
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      }
+
+      /**
+       * MODELADO ORGÁNICO Y REALISTA DE CERDO 3D
+       */
+      createOrganicPigMesh(type) {
+        const group = new THREE.Group();
+        let color = '#2ecc71';
+        let r = 2.4; // Mayor tamaño para la escala masiva
+
+        if (type === 'bomb') { color = '#2f3542'; r = 2.8; }
+        else if (type === 'rocket') { color = '#f1c40f'; }
+        else if (type === 'triple') { color = '#1e90ff'; r = 1.7; }
+
+        const skinMat = new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.45,
+          metalness: 0.08
+        });
+
+        const snoutMat = new THREE.MeshStandardMaterial({
+          color: '#7bed9f',
+          roughness: 0.35
+        });
+
+        const darkMat = new THREE.MeshStandardMaterial({ color: '#1e272e', roughness: 0.8 });
+
+        // 1. Cuerpo orgánico regordete
+        const bodyGeo = new THREE.SphereGeometry(r, 28, 28);
+        bodyGeo.scale(1.25, 1.05, 1.1);
+        const body = new THREE.Mesh(bodyGeo, skinMat);
+        body.castShadow = true;
+        group.add(body);
+
+        // 2. Hocico 3D prominente
+        const snoutGeo = new THREE.CylinderGeometry(r * 0.46, r * 0.5, r * 0.45, 16);
+        snoutGeo.rotateX(Math.PI / 2);
+        const snout = new THREE.Mesh(snoutGeo, snoutMat);
+        snout.position.set(r * 1.05, 0, 0);
+        snout.castShadow = true;
+        group.add(snout);
+
+        // Orificios nasales profundos
+        const holeGeo = new THREE.CylinderGeometry(r * 0.1, r * 0.1, r * 0.2, 8);
+        holeGeo.rotateX(Math.PI / 2);
+        const h1 = new THREE.Mesh(holeGeo, darkMat);
+        h1.position.set(r * 1.25, 0, -r * 0.2);
+        const h2 = new THREE.Mesh(holeGeo, darkMat);
+        h2.position.set(r * 1.25, 0, r * 0.2);
+        group.add(h1, h2);
+
+        // 3. Patas con pezuñas dobles
+        const legGeo = new THREE.CylinderGeometry(r * 0.22, r * 0.25, r * 0.7, 8);
+        const legPositions = [
+          [r * 0.55, -r * 0.95, -r * 0.55],
+          [r * 0.55, -r * 0.95, r * 0.55],
+          [-r * 0.55, -r * 0.95, -r * 0.55],
+          [-r * 0.55, -r * 0.95, r * 0.55]
+        ];
+        legPositions.forEach(pos => {
+          const leg = new THREE.Mesh(legGeo, darkMat);
+          leg.position.set(...pos);
+          leg.castShadow = true;
+          group.add(leg);
+        });
+
+        // 4. Cola en espiral
+        const tailGeo = new THREE.TorusGeometry(r * 0.3, r * 0.09, 8, 16, Math.PI * 1.8);
+        const tail = new THREE.Mesh(tailGeo, skinMat);
+        tail.position.set(-r * 1.3, r * 0.2, 0);
+        tail.rotation.y = Math.PI / 2;
+        group.add(tail);
+
+        // 5. Orejas flexibles caídas
+        const earGeo = new THREE.ConeGeometry(r * 0.4, r * 0.9, 8);
+        const earL = new THREE.Mesh(earGeo, skinMat);
+        earL.position.set(r * 0.3, r * 0.95, -r * 0.7);
+        earL.rotation.set(0.4, 0, 0.4);
+
+        const earR = new THREE.Mesh(earGeo, skinMat);
+        earR.position.set(r * 0.3, r * 0.95, r * 0.7);
+        earR.rotation.set(-0.4, 0, 0.4);
+        group.add(earL, earR);
+
+        // 6. Ojos brillantes
+        const eyeGeo = new THREE.SphereGeometry(r * 0.28, 14, 14);
+        const pupilGeo = new THREE.SphereGeometry(r * 0.11, 8, 8);
+        const whiteMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.1 });
+
+        const eye1 = new THREE.Mesh(eyeGeo, whiteMat);
+        const p1 = new THREE.Mesh(pupilGeo, darkMat);
+        p1.position.set(r * 0.24, 0, 0);
+        eye1.add(p1);
+        eye1.position.set(r * 0.85, r * 0.45, -r * 0.4);
+
+        const eye2 = new THREE.Mesh(eyeGeo, whiteMat);
+        const p2 = new THREE.Mesh(pupilGeo, darkMat);
+        p2.position.set(r * 0.24, 0, 0);
+        eye2.add(p2);
+        eye2.position.set(r * 0.85, r * 0.45, r * 0.4);
+        group.add(eye1, eye2);
+
+        // 7. Ojos saltones gigantes 3D (Impacto)
+        const popEyesGroup = new THREE.Group();
+        const bigEyeGeo = new THREE.SphereGeometry(r * 0.65, 16, 16);
+        const bigPupilGeo = new THREE.SphereGeometry(r * 0.24, 8, 8);
+
+        const bigEye1 = new THREE.Mesh(bigEyeGeo, whiteMat);
+        const bigPup1 = new THREE.Mesh(bigPupilGeo, darkMat);
+        bigPup1.position.set(r * 0.55, 0, 0);
+        bigEye1.add(bigPup1);
+        bigEye1.position.set(r * 1.5, r * 0.65, -r * 0.55);
+
+        const bigEye2 = new THREE.Mesh(bigEyeGeo, whiteMat);
+        const bigPup2 = new THREE.Mesh(bigPupilGeo, darkMat);
+        bigPup2.position.set(r * 0.55, 0, 0);
+        bigEye2.add(bigPup2);
+        bigEye2.position.set(r * 1.5, r * 0.65, r * 0.55);
+
+        popEyesGroup.add(bigEye1, bigEye2);
+        popEyesGroup.visible = false;
+        group.add(popEyesGroup);
+
+        return { mesh: group, popEyesGroup, r, color };
+      }
+
+      createBirdMesh(isKing, r) {
+        const group = new THREE.Group();
+        const bodyGeo = new THREE.SphereGeometry(r, 20, 20);
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: isKing ? '#8e44ad' : '#c0392b',
+          roughness: 0.6
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.castShadow = true;
+        group.add(body);
+
+        // Pico 3D
+        const beakGeo = new THREE.ConeGeometry(r * 0.4, r * 0.8, 8);
+        beakGeo.rotateZ(-Math.PI / 2);
+        const beakMat = new THREE.MeshStandardMaterial({ color: '#f39c12' });
+        const beak = new THREE.Mesh(beakGeo, beakMat);
+        beak.position.set(-r * 1.05, 0, 0);
+        group.add(beak);
+
+        // Corona si es rey
+        if (isKing) {
+          const crownGeo = new THREE.CylinderGeometry(1.6, 1.1, 1.5, 5);
+          const crownMat = new THREE.MeshStandardMaterial({ color: '#f1c40f', metalness: 0.6 });
+          const crown = new THREE.Mesh(crownGeo, crownMat);
+          crown.position.set(0, r + 0.8, 0);
+          group.add(crown);
+        }
+
+        return { mesh: group, r, isKing };
+      }
+
+      initPointerControls() {
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+
+        const onPointerDown = (e) => {
+          this.audio.init();
+          if (this.state === 'IDLE' && this.activePig && e.clientX < window.innerWidth * 0.65) {
+            this.isDragging = true;
+            this.state = 'AIMING';
+            this.dragStart = { x: e.clientX, y: e.clientY };
+            this.canvas.setPointerCapture(e.pointerId);
+            this.audio.playStretch();
+            document.getElementById('aimHint').style.display = 'none';
+            document.getElementById('touchSlingZone').style.display = 'none';
+          } else if (this.state === 'FLYING') {
+            this.triggerPigAbility();
+          }
+        };
+
+        const onPointerMove = (e) => {
+          if (!this.isDragging || this.state !== 'AIMING' || !this.activePig) return;
+
+          const dx = (e.clientX - this.dragStart.x) * 0.06;
+          const dy = (e.clientY - this.dragStart.y) * 0.06;
+
+          const slingCenter = new THREE.Vector3(-35, 19.5, 0);
+          const pull = new THREE.Vector3(dx, -dy, 0);
+          if (pull.length() > 8.5) pull.setLength(8.5);
+
+          this.activePig.mesh.position.copy(slingCenter).add(pull);
+          this.updateBands(this.activePig.mesh.position);
+        };
+
+        const onPointerUp = (e) => {
+          if (this.isDragging && this.state === 'AIMING' && this.activePig) {
+            try { this.canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+
+            const slingCenter = new THREE.Vector3(-35, 19.5, 0);
+            const pullVector = new THREE.Vector3().subVectors(slingCenter, this.activePig.mesh.position);
+
+            if (pullVector.length() > 1.5) {
+              // Velocidad adaptada a la gran distancia del valle
+              this.activePig.vx = pullVector.x * 0.42;
+              this.activePig.vy = pullVector.y * 0.42;
+              this.activePig.vz = 0;
+              this.activePig.inAir = true;
+              this.flyingPigs.push(this.activePig);
+              this.state = 'FLYING';
+              this.audio.playLaunch();
+              this.showComicPop("¡¡OIIINK!!", window.innerWidth * 0.25, window.innerHeight * 0.5);
+            } else {
+              this.activePig.mesh.position.copy(slingCenter);
+              this.state = 'IDLE';
+            }
+            this.updateBands(slingCenter);
+          }
+          this.isDragging = false;
+        };
+
+        this.canvas.addEventListener('pointerdown', onPointerDown);
+        this.canvas.addEventListener('pointermove', onPointerMove);
+        this.canvas.addEventListener('pointerup', onPointerUp);
+        this.canvas.addEventListener('pointercancel', onPointerUp);
+      }
+
+      initDOM() {
+        document.getElementById('btnRestart').addEventListener('click', () => this.loadLevel(this.currentLevel));
+        document.getElementById('btnRetry').addEventListener('click', () => {
+          document.getElementById('defeatModal').classList.add('hidden');
+          this.loadLevel(this.currentLevel);
+        });
+        document.getElementById('btnNextLevel').addEventListener('click', () => {
+          document.getElementById('victoryModal').classList.add('hidden');
+          const next = (this.currentLevel + 1) % LEVELS_MASSIVE.length;
+          this.loadLevel(next);
+        });
+
+        const btnSound = document.getElementById('btnSound');
+        btnSound.addEventListener('click', () => {
+          const on = this.audio.toggle();
+          btnSound.textContent = on ? '🔊 SONIDO' : '🔇 MUTE';
+        });
+
+        document.getElementById('btnToggleCam').addEventListener('click', () => {
+          if (this.camMode === 'follow') this.camMode = 'side';
+          else if (this.camMode === 'side') this.camMode = 'wide';
+          else this.camMode = 'follow';
+        });
+
+        // Botones 1-Clic calibrados para la gran distancia
+        document.getElementById('btnLaunchDirect').addEventListener('click', () => this.oneClickLaunch(2.7, 0.45));
+        document.getElementById('btnLaunchArc').addEventListener('click', () => this.oneClickLaunch(2.35, 1.25));
+        document.getElementById('btnLaunchPower').addEventListener('click', () => this.oneClickLaunch(3.2, 0.7));
+      }
+
+      oneClickLaunch(vx, vy) {
+        if (this.state !== 'IDLE' || !this.activePig) return;
+        this.audio.init();
+        document.getElementById('aimHint').style.display = 'none';
+        document.getElementById('touchSlingZone').style.display = 'none';
+
+        this.activePig.vx = vx;
+        this.activePig.vy = vy;
+        this.activePig.vz = 0;
+        this.activePig.inAir = true;
+        this.flyingPigs.push(this.activePig);
+        this.state = 'FLYING';
+
+        this.audio.playLaunch();
+        this.showComicPop("¡¡DISPARO ÉPICO!!", window.innerWidth * 0.3, window.innerHeight * 0.5);
+      }
+
+      loadLevel(idx) {
+        this.currentLevel = idx;
+        const lvl = LEVELS_MASSIVE[idx];
+
+        document.getElementById('hudLevelName').textContent = lvl.name;
+        document.getElementById('aimHint').style.display = 'block';
+        document.getElementById('touchSlingZone').style.display = 'flex';
+
+        this.clearObjects();
+
+        // 1. Bloques de Gran Escala
+        lvl.blocks.forEach(b => {
+          const mesh = this.createBlockMesh(b);
+          this.scene.add(mesh);
+          this.blocks.push({
+            mesh,
+            w: b.w, h: b.h, d: b.d,
+            mat: b.mat,
+            vx: 0, vy: 0, vz: 0,
+            hp: b.mat === 'stone' ? 140 : (b.mat === 'wood' ? 60 : 30),
+            dead: false
+          });
+        });
+
+        // 2. Pájaros 3D
+        lvl.targets.forEach(t => {
+          const birdObj = this.createBirdMesh(t.isKing, t.r);
+          birdObj.mesh.position.set(t.x, t.y, t.z);
+          this.scene.add(birdObj.mesh);
+          this.targets.push({
+            ...birdObj,
+            vx: 0, vy: 0, vz: 0,
+            hp: t.isKing ? 90 : 35,
+            dead: false
+          });
+        });
+
+        // 3. Cerdos Orgánicos Realistas
+        this.pigsQueue = lvl.pigs.map((type, i) => {
+          const pigObj = this.createOrganicPigMesh(type);
+          pigObj.mesh.position.set(-45 - i * 6, 8.5, 0);
+          this.scene.add(pigObj.mesh);
+          return {
+            ...pigObj,
+            type,
+            vx: 0, vy: 0, vz: 0,
+            inAir: false,
+            abilityUsed: false,
+            dead: false
+          };
+        });
+
+        this.prepareNextPig();
+      }
+
+      clearObjects() {
+        this.blocks.forEach(b => this.scene.remove(b.mesh));
+        this.targets.forEach(t => this.scene.remove(t.mesh));
+        this.flyingPigs.forEach(p => this.scene.remove(p.mesh));
+        this.pigsQueue.forEach(p => this.scene.remove(p.mesh));
+        this.debris.forEach(d => this.scene.remove(d.mesh));
+
+        this.blocks = [];
+        this.targets = [];
+        this.flyingPigs = [];
+        this.pigsQueue = [];
+        this.debris = [];
+      }
+
+      createBlockMesh(b) {
+        const geo = new THREE.BoxGeometry(b.w, b.h, b.d);
+        let mat;
+        if (b.mat === 'wood') mat = new THREE.MeshStandardMaterial({ map: this.woodTex, roughness: 0.7 });
+        else if (b.mat === 'stone') mat = new THREE.MeshStandardMaterial({ map: this.stoneTex, roughness: 0.9 });
+        else if (b.mat === 'glass') mat = new THREE.MeshStandardMaterial({ color: '#74b9ff', opacity: 0.6, transparent: true, roughness: 0.1 });
+        else if (b.mat === 'tnt') mat = new THREE.MeshStandardMaterial({ color: '#e74c3c', roughness: 0.5 });
+
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(b.x, b.y, b.z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
+      }
+
+      prepareNextPig() {
+        if (this.pigsQueue.length > 0) {
+          this.activePig = this.pigsQueue.shift();
+          const slingCenter = new THREE.Vector3(-35, 19.5, 0);
+          this.activePig.mesh.position.copy(slingCenter);
+          this.state = 'IDLE';
+        } else {
+          this.activePig = null;
+          this.checkLevelEnd();
+        }
+      }
+
+      triggerPigAbility() {
+        if (!this.activePig || this.activePig.abilityUsed || !this.activePig.inAir) return;
+        this.activePig.abilityUsed = true;
+
+        if (this.activePig.type === 'rocket') {
+          this.activePig.vx *= 2.2;
+          this.activePig.vy *= 0.6;
+          this.audio.playBoing();
+          this.showComicPop("¡¡SUPER TURBO!!", window.innerWidth * 0.5, window.innerHeight * 0.4);
+          this.triggerActionLines(true);
+        } else if (this.activePig.type === 'bomb') {
+          this.detonateTNT(this.activePig.mesh.position.x, this.activePig.mesh.position.y, this.activePig.mesh.position.z, 22);
+          this.activePig.dead = true;
+        } else if (this.activePig.type === 'triple') {
+          this.audio.playBoing();
+          this.showComicPop("¡¡TRILLIZOS!!", window.innerWidth * 0.5, window.innerHeight * 0.4);
+          const p1 = this.createOrganicPigMesh('triple');
+          p1.mesh.position.copy(this.activePig.mesh.position);
+          p1.vx = this.activePig.vx;
+          p1.vy = this.activePig.vy + 0.4;
+          p1.vz = this.activePig.vz - 0.5;
+          p1.inAir = true;
+          this.scene.add(p1.mesh);
+          this.flyingPigs.push(p1);
+        }
+      }
+
+      detonateTNT(x, y, z, radius) {
+        this.audio.playExplosion();
+        this.triggerVignette('tnt');
+        this.showComicPop("¡¡GRAN EXPLOSIÓN!!", window.innerWidth * 0.5, window.innerHeight * 0.4);
+
+        const light = new THREE.PointLight('#f1c40f', 8, 50);
+        light.position.set(x, y, z);
+        this.scene.add(light);
+        setTimeout(() => this.scene.remove(light), 450);
+
+        this.spawnDebris(new THREE.Vector3(x, y, z), '#e74c3c', 35, 1.6);
+        this.spawnDebris(new THREE.Vector3(x, y, z), '#f1c40f', 25, 1.4);
+
+        this.blocks.forEach(b => {
+          const dist = b.mesh.position.distanceTo(new THREE.Vector3(x, y, z));
+          if (dist < radius) {
+            b.hp -= (1 - dist / radius) * 180;
+            const dir = new THREE.Vector3().subVectors(b.mesh.position, new THREE.Vector3(x, y, z)).normalize();
+            b.vx += dir.x * 1.2;
+            b.vy += dir.y * 1.2 + 0.6;
+            b.vz += dir.z * 1.2;
+          }
+        });
+
+        this.targets.forEach(t => {
+          const dist = t.mesh.position.distanceTo(new THREE.Vector3(x, y, z));
+          if (dist < radius) t.hp -= 180;
+        });
+      }
+
+      spawnDebris(pos, color, count, speed = 0.8) {
+        for (let i = 0; i < count; i++) {
+          const size = Math.random() * 1.2 + 0.4;
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), new THREE.MeshStandardMaterial({ color }));
+          mesh.position.copy(pos);
+          this.scene.add(mesh);
+
+          this.debris.push({
+            mesh,
+            vx: (Math.random() - 0.5) * speed,
+            vy: (Math.random() * speed) + 0.3,
+            vz: (Math.random() - 0.5) * speed,
+            life: 70
+          });
+        }
+      }
+
+      showComicPop(text, x, y) {
+        const el = document.createElement('div');
+        el.className = 'comic-pop';
+        el.textContent = text;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        this.container.appendChild(el);
+        setTimeout(() => el.remove(), 900);
+      }
+
+      triggerVignette(type = 'hit') {
+        const v = document.getElementById('impactVignette');
+        v.className = `impact-vignette ${type}`;
+        setTimeout(() => v.className = 'impact-vignette', 300);
+      }
+
+      triggerActionLines(active) {
+        document.getElementById('comicActionLines').className = active ? 'comic-action-lines active' : 'comic-action-lines';
+      }
+
+      animate(timestamp) {
+        const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
+        this.lastTime = timestamp;
+
+        this.updatePhysics(dt);
+        this.updateCamera(dt);
+
+        this.renderer.render(this.scene, this.camera);
+        requestAnimationFrame((t) => this.animate(t));
+      }
+
+      updatePhysics(dt) {
+        const GRAV = -0.018;
+
+        // Cerdos voladores
+        this.flyingPigs.forEach(p => {
+          if (p.dead) return;
+
+          p.vy += GRAV;
+          p.mesh.position.x += p.vx;
+          p.mesh.position.y += p.vy;
+          p.mesh.position.z += p.vz;
+          p.mesh.rotation.z -= p.vx * 0.06;
+
+          if (p.mesh.position.y - p.r <= 0) {
+            p.mesh.position.y = p.r;
+            p.vy = -p.vy * 0.3;
+            p.vx *= 0.7;
+          }
+
+          // Slow-Mo Zoom al cruzar el valle y llegar al castillo
+          if (p.mesh.position.x > 62 && p.mesh.position.x < 78 && !p.slowMoTriggered) {
+            p.slowMoTriggered = true;
+            this.enterSlowMoZoom(p.mesh.position);
+          }
+
+          // Colisión Cerdo vs Bloques
+          this.blocks.forEach(b => {
+            if (b.dead) return;
+            const dist = p.mesh.position.distanceTo(b.mesh.position);
+            if (dist < p.r + b.w * 0.6) {
+              b.hp -= Math.hypot(p.vx, p.vy) * 28;
+              b.vx += p.vx * 0.6;
+              b.vy += p.vy * 0.6;
+              b.vz += p.vz * 0.6;
+
+              p.vx = -p.vx * 0.3;
+              p.vy = -p.vy * 0.3;
+
+              // ¡OJOS SALTONES 3D GIGANTES!
+              if (p.popEyesGroup) p.popEyesGroup.visible = true;
+
+              this.audio.playHit();
+              this.triggerVignette('hit');
+              this.showComicPop("¡¡IMPACTO TOTAL!!", window.innerWidth * 0.6, window.innerHeight * 0.45);
+              this.spawnDebris(p.mesh.position, '#b07238', 12);
+
+              if (b.mat === 'tnt') {
+                this.detonateTNT(b.mesh.position.x, b.mesh.position.y, b.mesh.position.z, 22);
+                b.dead = true;
+              }
+            }
+          });
+
+          // Colisión Cerdo vs Aves
+          this.targets.forEach(t => {
+            if (t.dead) return;
+            const dist = p.mesh.position.distanceTo(t.mesh.position);
+            if (dist < p.r + t.r) {
+              t.hp -= 60;
+              if (p.popEyesGroup) p.popEyesGroup.visible = true;
+              this.audio.playBoing();
+              this.showComicPop("¡¡SQUAWK!!", window.innerWidth * 0.65, window.innerHeight * 0.4);
+            }
+          });
+        });
+
+        // Físicas de Bloques
+        this.blocks.forEach(b => {
+          if (b.dead) return;
+
+          b.vy += GRAV;
+          b.vx *= 0.98;
+          b.vz *= 0.98;
+
+          b.mesh.position.x += b.vx;
+          b.mesh.position.y += b.vy;
+          b.mesh.position.z += b.vz;
+
+          if (b.mesh.position.y - b.h / 2 <= 0) {
+            b.mesh.position.y = b.h / 2;
+            b.vy = -b.vy * 0.2;
+            b.vx *= 0.85;
+            b.vz *= 0.85;
+          }
+
+          if (b.hp <= 0 && !b.dead) {
+            b.dead = true;
+            this.addScore(500);
+            this.scene.remove(b.mesh);
+            this.spawnDebris(b.mesh.position, '#7f8c8d', 16);
+          }
+        });
+
+        // Físicas de Aves
+        this.targets.forEach(t => {
+          if (t.dead) return;
+
+          t.vy += GRAV;
+          t.vx *= 0.97;
+          t.vz *= 0.97;
+
+          t.mesh.position.x += t.vx;
+          t.mesh.position.y += t.vy;
+          t.mesh.position.z += t.vz;
+
+          if (t.mesh.position.y - t.r <= 0) {
+            t.mesh.position.y = t.r;
+            t.vy = -t.vy * 0.2;
+            t.vx *= 0.8;
+          }
+
+          if (t.hp <= 0 && !t.dead) {
+            t.dead = true;
+            const pts = t.isKing ? 10000 : 5000;
+            this.addScore(pts);
+            this.audio.playBoing();
+            this.showComicPop(t.isKing ? "¡¡REY DERROTADO!!" : "¡¡PLOOOF!!", window.innerWidth * 0.55, window.innerHeight * 0.4);
+            this.spawnDebris(t.mesh.position, '#e74c3c', 20);
+            setTimeout(() => this.scene.remove(t.mesh), 800);
+          }
+        });
+
+        // Debris
+        for (let i = this.debris.length - 1; i >= 0; i--) {
+          const d = this.debris[i];
+          d.vy += GRAV;
+          d.mesh.position.x += d.vx;
+          d.mesh.position.y += d.vy;
+          d.mesh.position.z += d.vz;
+          d.life--;
+          if (d.mesh.position.y <= 0) {
+            d.mesh.position.y = 0.3;
+            d.vy = 0;
+          }
+          if (d.life <= 0) {
+            this.scene.remove(d.mesh);
+            this.debris.splice(i, 1);
+          }
+        }
+
+        // Fin de turno
+        if (this.state === 'FLYING') {
+          const stopped = this.flyingPigs.every(p => Math.hypot(p.vx, p.vy) < 0.05 || p.dead);
+          if (stopped) {
+            setTimeout(() => {
+              if (this.state === 'FLYING') this.checkLevelEnd();
+            }, 1200);
+          }
+        }
+      }
+
+      enterSlowMoZoom(targetPos) {
+        document.getElementById('slowMoBadge').style.display = 'block';
+        this.triggerActionLines(true);
+
+        this.targetCamPos.set(targetPos.x - 10, targetPos.y + 6, targetPos.z + 18);
+        this.targetCamLook.copy(targetPos);
+
+        setTimeout(() => {
+          document.getElementById('slowMoBadge').style.display = 'none';
+          this.triggerActionLines(false);
+        }, 1400);
+      }
+
+      updateCamera(dt) {
+        if (this.camMode === 'follow' && this.flyingPigs.length > 0) {
+          const lead = this.flyingPigs[this.flyingPigs.length - 1];
+          if (!lead.dead) {
+            this.targetCamPos.set(lead.mesh.position.x - 24, lead.mesh.position.y + 14, lead.mesh.position.z + 38);
+            this.targetCamLook.set(lead.mesh.position.x + 12, lead.mesh.position.y, lead.mesh.position.z);
+          }
+        } else if (this.camMode === 'side') {
+          this.targetCamPos.set(30, 25, 90);
+          this.targetCamLook.set(30, 10, 0);
+        } else {
+          // Vista Overlook inicial
+          this.targetCamPos.set(-45, 20, 38);
+          this.targetCamLook.set(20, 10, 0);
+        }
+
+        this.camera.position.lerp(this.targetCamPos, 0.05);
+        this.camera.lookAt(this.targetCamLook);
+      }
+
+      addScore(pts) {
+        this.score += pts;
+        document.getElementById('hudScore').textContent = this.score;
+      }
+
+      checkLevelEnd() {
+        const remainingBirds = this.targets.filter(t => !t.dead).length;
+
+        if (remainingBirds === 0) {
+          this.state = 'LEVEL_OVER';
+          this.audio.playVictory();
+          document.getElementById('vicScore').textContent = this.score;
+
+          document.getElementById('s1').className = 'star-icon active';
+          document.getElementById('s2').className = 'star-icon active';
+          document.getElementById('s3').className = this.score > 20000 ? 'star-icon active' : 'star-icon';
+
+          document.getElementById('victoryModal').classList.remove('hidden');
+        } else if (this.pigsQueue.length === 0 && (!this.activePig || this.activePig.inAir)) {
+          this.state = 'LEVEL_OVER';
+          document.getElementById('defeatModal').classList.remove('hidden');
+        } else {
+          this.prepareNextPig();
+        }
+      }
+    }
+
+    // Iniciar
+    window.addEventListener('DOMContentLoaded', () => {
+      window.gameMassive = new MassiveAngryPigsGame();
+    });
+  </script>
+</body>
+</html>

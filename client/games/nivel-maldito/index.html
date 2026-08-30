@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Nivel Maldito - ezze.games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background: #090d16;
+      color: #fff;
+      font-family: 'Bungee', 'Outfit', sans-serif;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #gameWrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.25);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 3px solid #ef4444;
+    }
+
+    canvas {
+      background: #0f172a;
+      display: block;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .level-badge {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #ef4444;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #ef4444;
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+    }
+
+    .deaths-badge {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #f59e0b;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #f59e0b;
+    }
+
+    .msg-toast {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(239, 68, 68, 0.95);
+      border: 2px solid #fff;
+      padding: 8px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+      color: #fff;
+      display: none;
+      animation: popMsg 0.3s ease;
+      z-index: 20;
+      white-space: nowrap;
+    }
+
+    @keyframes popMsg {
+      from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+      to { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+
+    /* Modal de Victoria Final */
+    .victory-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(9, 13, 22, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 50;
+    }
+
+    .victory-screen.hidden {
+      display: none;
+    }
+
+    .vic-title {
+      font-size: 34px;
+      color: #f59e0b;
+      text-shadow: 0 0 25px rgba(245, 158, 11, 0.8);
+      text-align: center;
+    }
+
+    .btn-restart {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-family: 'Bungee', cursive;
+      font-size: 16px;
+      padding: 14px 28px;
+      border: 2px solid #fff;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #047857;
+      transition: all 0.1s ease;
+    }
+
+    .btn-restart:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="gameWrapper">
+    <div class="top-bar">
+      <div class="level-badge" id="lvlBadge">NIVEL 1: PARECE FÁCIL</div>
+      <div class="deaths-badge">💀 MUERTES: <span id="deathCount">0</span></div>
+    </div>
+
+    <div class="msg-toast" id="msgToast">¡CAÍSTE EN LA TRAMPA! 😈</div>
+
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <div class="victory-screen hidden" id="vicScreen">
+      <h1 class="vic-title">🏆 ¡SUPERASTE EL NIVEL MALDITO! 🏆</h1>
+      <p style="font-family: 'Outfit', sans-serif; font-size: 16px; color: #94a3b8;">
+        Sobreviviste a todas las trampas troll con <strong id="finalDeaths" style="color: #ef4444;">0</strong> muertes.
+      </p>
+      <button class="btn-restart" id="btnPlayAgain">JUGAR DE NUEVO 🔄</button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * MOTOR DE AUDIO PROCEDURAL (SIN ARCHIVOS EXTERNOS)
+     */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+
+      playJump() {
+        if (!this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(480, now + 0.12);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+      }
+
+      playTrap() {
+        if (!this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(450, now);
+        osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+        g.gain.setValueAtTime(0.3, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      playDeath() {
+        if (!this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+        g.gain.setValueAtTime(0.4, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.27);
+      }
+
+      playWin() {
+        if (!this.ctx) return;
+        this.init();
+        [440, 554.37, 659.25, 880].forEach((f, i) => {
+          const now = this.ctx.currentTime + i * 0.1;
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(0.25, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /**
+     * DEFINICIÓN DE LOS 9 NIVELES TROLL
+     */
+    const LEVELS = [
+      {
+        name: "Nivel 1: Parece Fácil",
+        spawn: { x: 80, y: 380 },
+        door: { x: 700, y: 380, w: 36, h: 56 },
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 },
+          { x: 300, y: 340, w: 160, h: 20 }
+        ],
+        spikes: [],
+        traps: [
+          {
+            type: 'popup_spike',
+            triggerX: 620,
+            x: 640, y: 440, w: 26, h: 36,
+            triggered: false, currentY: 440, targetY: 404
+          }
+        ]
+      },
+      {
+        name: "Nivel 2: Suelo Inestable",
+        spawn: { x: 80, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56 },
+        platforms: [
+          { x: 0, y: 440, w: 200, h: 60 },
+          { x: 260, y: 440, w: 140, h: 60, falls: true, vy: 0 },
+          { x: 460, y: 440, w: 120, h: 60, falls: true, vy: 0 },
+          { x: 640, y: 440, w: 160, h: 60 }
+        ],
+        spikes: [
+          { x: 200, y: 460, w: 60, h: 40 },
+          { x: 400, y: 460, w: 60, h: 40 }
+        ],
+        traps: []
+      },
+      {
+        name: "Nivel 3: La Puerta que Huye",
+        spawn: { x: 80, y: 380 },
+        door: { x: 700, y: 380, w: 36, h: 56, moved: false },
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 },
+          { x: 320, y: 220, w: 180, h: 20 }
+        ],
+        spikes: [],
+        traps: [
+          {
+            type: 'fleeing_door',
+            triggerX: 620,
+            targetX: 390, targetY: 164,
+            triggered: false
+          }
+        ]
+      },
+      {
+        name: "Nivel 4: Cuidado Arriba",
+        spawn: { x: 80, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56 },
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 }
+        ],
+        spikes: [],
+        traps: [
+          {
+            type: 'falling_ceiling',
+            triggerX: 300,
+            x: 280, y: 0, w: 240, h: 40,
+            vy: 0, triggered: false
+          }
+        ]
+      },
+      {
+        name: "Nivel 5: Mundo Invertido 🔄",
+        spawn: { x: 80, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56 },
+        invertedControls: true,
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 },
+          { x: 260, y: 330, w: 120, h: 20 },
+          { x: 460, y: 250, w: 120, h: 20 }
+        ],
+        spikes: [
+          { x: 380, y: 410, w: 80, h: 30 }
+        ],
+        traps: []
+      },
+      {
+        name: "Nivel 6: Muro de la Muerte 🏃‍♂️",
+        spawn: { x: 120, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56 },
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 },
+          { x: 280, y: 340, w: 100, h: 20 },
+          { x: 460, y: 340, w: 100, h: 20 }
+        ],
+        spikes: [],
+        traps: [
+          {
+            type: 'chaser_wall',
+            x: -40, y: 150, w: 40, h: 290,
+            vx: 3.2, triggered: true
+          }
+        ]
+      },
+      {
+        name: "Nivel 7: Gravedad Cero 🌌",
+        spawn: { x: 80, y: 100 },
+        door: { x: 710, y: 80, w: 36, h: 56 },
+        invertedGravity: true,
+        platforms: [
+          { x: 0, y: 0, w: 800, h: 50 },
+          { x: 280, y: 180, w: 120, h: 20 },
+          { x: 480, y: 220, w: 120, h: 20 },
+          { x: 0, y: 450, w: 800, h: 50 }
+        ],
+        spikes: [
+          { x: 0, y: 420, w: 800, h: 30 }
+        ],
+        traps: []
+      },
+      {
+        name: "Nivel 8: El Salto Ciego",
+        spawn: { x: 80, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56 },
+        platforms: [
+          { x: 0, y: 440, w: 160, h: 60 },
+          { x: 260, y: 440, w: 100, h: 60, invisible: true },
+          { x: 440, y: 440, w: 100, h: 60, invisible: true },
+          { x: 620, y: 440, w: 180, h: 60 }
+        ],
+        spikes: [
+          { x: 160, y: 470, w: 460, h: 30 }
+        ],
+        traps: [
+          {
+            type: 'surprise_blade',
+            x: 380, y: -40, r: 24, vy: 6,
+            triggered: false, triggerX: 320
+          }
+        ]
+      },
+      {
+        name: "Nivel 9: La Gran Trampa Final 👑",
+        spawn: { x: 80, y: 380 },
+        door: { x: 710, y: 380, w: 36, h: 56, moved: false },
+        platforms: [
+          { x: 0, y: 440, w: 800, h: 60 },
+          { x: 220, y: 330, w: 120, h: 20, falls: true, vy: 0 },
+          { x: 440, y: 220, w: 140, h: 20 }
+        ],
+        spikes: [
+          { x: 340, y: 410, w: 100, h: 30 }
+        ],
+        traps: [
+          {
+            type: 'popup_spike',
+            triggerX: 180,
+            x: 190, y: 440, w: 26, h: 36,
+            triggered: false, currentY: 440, targetY: 404
+          },
+          {
+            type: 'fleeing_door',
+            triggerX: 630,
+            targetX: 500, targetY: 164,
+            triggered: false
+          }
+        ]
+      }
+    ];
+
+    /**
+     * ESTADO DEL JUEGO
+     */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentLevelIdx = 0;
+    let deaths = 0;
+    let player = {
+      x: 80, y: 380, w: 30, h: 36,
+      vx: 0, vy: 0,
+      grounded: false,
+      facing: 1, // 1 der, -1 izq
+      dead: false
+    };
+
+    let keys = {};
+    let levelData = null;
+    let particles = [];
+
+    window.addEventListener('keydown', e => {
+      sound.init();
+      keys[e.code] = true;
+      if (['ArrowUp', 'KeyW', 'Space'].includes(e.code) && player.grounded && !player.dead) {
+        const gravSign = levelData.invertedGravity ? -1 : 1;
+        player.vy = -12.5 * gravSign;
+        player.grounded = false;
+        sound.playJump();
+      }
+      if (e.code === 'KeyR' && !player.dead) {
+        killPlayer("¡Reinicio voluntario!");
+      }
+    });
+
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    document.getElementById('btnPlayAgain').addEventListener('click', () => {
+      document.getElementById('vicScreen').classList.add('hidden');
+      currentLevelIdx = 0;
+      deaths = 0;
+      document.getElementById('deathCount').textContent = deaths;
+      loadLevel(0);
+    });
+
+    function loadLevel(idx) {
+      currentLevelIdx = idx;
+      // Clon profundo del nivel
+      levelData = JSON.parse(JSON.stringify(LEVELS[idx]));
+
+      document.getElementById('lvlBadge').textContent = levelData.name;
+
+      player.x = levelData.spawn.x;
+      player.y = levelData.spawn.y;
+      player.vx = 0;
+      player.vy = 0;
+      player.dead = false;
+
+      if (levelData.invertedControls) {
+        showToast("⚠️ ¡CUIDADO! CONTROLES INVERTIDOS");
+      }
+    }
+
+    function showToast(txt) {
+      const t = document.getElementById('msgToast');
+      t.textContent = txt;
+      t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 1800);
+    }
+
+    function killPlayer(reason = "¡CAÍSTE EN LA TRAMPA! 😈") {
+      if (player.dead) return;
+      player.dead = true;
+      deaths++;
+      document.getElementById('deathCount').textContent = deaths;
+      sound.playDeath();
+      showToast(reason);
+
+      // Explosión de partículas
+      for (let i = 0; i < 25; i++) {
+        particles.push({
+          x: player.x + player.w / 2,
+          y: player.y + player.h / 2,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          size: Math.random() * 5 + 3,
+          color: Math.random() > 0.5 ? '#ef4444' : '#f59e0b',
+          life: 30
+        });
+      }
+
+      setTimeout(() => {
+        loadLevel(currentLevelIdx);
+      }, 350);
+    }
+
+    function winLevel() {
+      sound.playWin();
+      if (currentLevelIdx < LEVELS.length - 1) {
+        loadLevel(currentLevelIdx + 1);
+      } else {
+        document.getElementById('finalDeaths').textContent = deaths;
+        document.getElementById('vicScreen').classList.remove('hidden');
+      }
+    }
+
+    /**
+     * BUCLE PRINCIPAL
+     */
+    function update() {
+      if (player.dead) {
+        updateParticles();
+        return;
+      }
+
+      const SPEED = 5.2;
+      const GRAV = levelData.invertedGravity ? -0.65 : 0.65;
+      const isInv = levelData.invertedControls;
+
+      // Movimiento horizontal
+      let moveDir = 0;
+      if (keys['ArrowLeft'] || keys['KeyA']) moveDir -= 1;
+      if (keys['ArrowRight'] || keys['KeyD']) moveDir += 1;
+
+      if (isInv) moveDir = -moveDir;
+
+      player.vx = moveDir * SPEED;
+      if (moveDir !== 0) player.facing = moveDir;
+
+      // Gravedad
+      player.vy += GRAV;
+      player.x += player.vx;
+      player.y += player.vy;
+
+      // Colisiones con plataformas
+      player.grounded = false;
+
+      levelData.platforms.forEach(p => {
+        // Plataformas que caen
+        if (p.falls && p.falling) {
+          p.vy += 0.4;
+          p.y += p.vy;
+        }
+
+        if (
+          player.x < p.x + p.w &&
+          player.x + player.w > p.x &&
+          player.y < p.y + p.h &&
+          player.y + player.h > p.y
+        ) {
+          if (!levelData.invertedGravity) {
+            if (player.vy > 0 && player.y + player.h - player.vy <= p.y + 12) {
+              player.y = p.y - player.h;
+              player.vy = 0;
+              player.grounded = true;
+              if (p.falls) p.falling = true;
+            }
+          } else {
+            if (player.vy < 0 && player.y - player.vy >= p.y + p.h - 12) {
+              player.y = p.y + p.h;
+              player.vy = 0;
+              player.grounded = true;
+            }
+          }
+        }
+      });
+
+      // Límites de pantalla
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+
+      // Caída al abismo
+      if (player.y > canvas.height + 80 || player.y < -100) {
+        killPlayer("¡Te caíste al vacío!");
+      }
+
+      // Colisión con pinchos estáticos
+      levelData.spikes.forEach(s => {
+        if (
+          player.x < s.x + s.w &&
+          player.x + player.w > s.x &&
+          player.y < s.y + s.h &&
+          player.y + player.h > s.y
+        ) {
+          killPlayer("¡Pinchado sin piedad!");
+        }
+      });
+
+      // Procesar Trampas Troll
+      levelData.traps.forEach(tr => {
+        // Pincho sorpresa que brota
+        if (tr.type === 'popup_spike') {
+          if (!tr.triggered && Math.abs(player.x - tr.triggerX) < 40) {
+            tr.triggered = true;
+            sound.playTrap();
+          }
+          if (tr.triggered) {
+            tr.currentY = Math.max(tr.targetY, tr.currentY - 6);
+            if (
+              player.x < tr.x + tr.w &&
+              player.x + player.w > tr.x &&
+              player.y < tr.currentY + tr.h &&
+              player.y + player.h > tr.currentY
+            ) {
+              killPlayer("¡Pincho sorpresa!");
+            }
+          }
+        }
+
+        // Puerta que huye
+        if (tr.type === 'fleeing_door') {
+          if (!tr.triggered && player.x > tr.triggerX) {
+            tr.triggered = true;
+            sound.playTrap();
+            levelData.door.x = tr.targetX;
+            levelData.door.y = tr.targetY;
+            levelData.door.moved = true;
+            showToast("🚪 ¡JAJAJA! ¡LA PUERTA HUYÓ!");
+          }
+        }
+
+        // Techo aplastador
+        if (tr.type === 'falling_ceiling') {
+          if (!tr.triggered && player.x > tr.triggerX) {
+            tr.triggered = true;
+            sound.playTrap();
+          }
+          if (tr.triggered) {
+            tr.vy += 0.8;
+            tr.y += tr.vy;
+            if (
+              player.x < tr.x + tr.w &&
+              player.x + player.w > tr.x &&
+              player.y < tr.y + tr.h &&
+              player.y + player.h > tr.y
+            ) {
+              killPlayer("¡Aplastado como una mosca!");
+            }
+          }
+        }
+
+        // Muro de pinchos perseguidor
+        if (tr.type === 'chaser_wall') {
+          tr.x += tr.vx;
+          if (
+            player.x < tr.x + tr.w &&
+            player.x + player.w > tr.x &&
+            player.y < tr.y + tr.h &&
+            player.y + player.h > tr.y
+          ) {
+            killPlayer("¡El muro te alcanzó!");
+          }
+        }
+
+        // Sierra sorpresa que cae
+        if (tr.type === 'surprise_blade') {
+          if (!tr.triggered && player.x > tr.triggerX) {
+            tr.triggered = true;
+            sound.playTrap();
+          }
+          if (tr.triggered) {
+            tr.y += tr.vy;
+            if (Math.hypot((player.x + player.w/2) - tr.x, (player.y + player.h/2) - tr.y) < tr.r + 14) {
+              killPlayer("¡Rebanado por la sierra!");
+            }
+          }
+        }
+      });
+
+      // Llegar a la puerta de salida
+      const d = levelData.door;
+      if (
+        player.x < d.x + d.w &&
+        player.x + player.w > d.x &&
+        player.y < d.y + d.h &&
+        player.y + player.h > d.y
+      ) {
+        winLevel();
+      }
+
+      updateParticles();
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Cuadrícula decorativa
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      if (!levelData) return;
+
+      // 1. Dibujar Plataformas
+      levelData.platforms.forEach(p => {
+        if (p.invisible) {
+          ctx.strokeStyle = 'rgba(59, 130, 246, 0.25)';
+          ctx.strokeRect(p.x, p.y, p.w, p.h);
+        } else {
+          ctx.fillStyle = p.falls ? '#b45309' : '#334155';
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+          ctx.strokeStyle = p.falls ? '#f59e0b' : '#64748b';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(p.x, p.y, p.w, p.h);
+        }
+      });
+
+      // 2. Dibujar Pinchos Estáticos
+      levelData.spikes.forEach(s => {
+        drawSpikeRow(s.x, s.y, s.w, s.h);
+      });
+
+      // 3. Dibujar Trampas
+      levelData.traps.forEach(tr => {
+        if (tr.type === 'popup_spike' && tr.triggered) {
+          drawSpikeRow(tr.x, tr.currentY, tr.w, tr.h);
+        }
+        if (tr.type === 'falling_ceiling') {
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(tr.x, tr.y, tr.w, tr.h);
+          drawSpikeRow(tr.x, tr.y + tr.h - 10, tr.w, 15, true);
+        }
+        if (tr.type === 'chaser_wall') {
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+          drawSpikeRow(tr.x + tr.w - 10, tr.y, 15, tr.h, false, true);
+        }
+        if (tr.type === 'surprise_blade' && tr.triggered) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath();
+          ctx.arc(tr.x, tr.y, tr.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      });
+
+      // 4. Puerta de Salida
+      const d = levelData.door;
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.strokeStyle = '#34d399';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(d.x, d.y, d.w, d.h);
+      // Pomo
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(d.x + 8, d.y + d.h / 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Partículas
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      });
+
+      // 6. Personaje
+      if (!player.dead) {
+        // Cuerpo cuadrado negro estilizado con borde neón
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(player.x, player.y, player.w, player.h);
+
+        // Ojos expresivos
+        const eyeOffX = player.facing === 1 ? 6 : -6;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(player.x + 10 + eyeOffX, player.y + 10, 5, 8);
+        ctx.fillRect(player.x + 18 + eyeOffX, player.y + 10, 5, 8);
+
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(player.x + 12 + eyeOffX, player.y + 12, 3, 4);
+        ctx.fillRect(player.x + 20 + eyeOffX, player.y + 12, 3, 4);
+      }
+    }
+
+    function drawSpikeRow(x, y, w, h, invertedY = false, vertical = false) {
+      ctx.fillStyle = '#ef4444';
+      ctx.strokeStyle = '#b91c1c';
+      ctx.lineWidth = 1.5;
+
+      if (!vertical) {
+        const spikeW = 14;
+        const count = Math.max(1, Math.floor(w / spikeW));
+        for (let i = 0; i < count; i++) {
+          const sx = x + i * spikeW;
+          ctx.beginPath();
+          if (!invertedY) {
+            ctx.moveTo(sx, y + h);
+            ctx.lineTo(sx + spikeW / 2, y);
+            ctx.lineTo(sx + spikeW, y + h);
+          } else {
+            ctx.moveTo(sx, y);
+            ctx.lineTo(sx + spikeW / 2, y + h);
+            ctx.lineTo(sx + spikeW, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      } else {
+        const spikeH = 14;
+        const count = Math.max(1, Math.floor(h / spikeH));
+        for (let i = 0; i < count; i++) {
+          const sy = y + i * spikeH;
+          ctx.beginPath();
+          ctx.moveTo(x, sy);
+          ctx.lineTo(x + w, sy + spikeH / 2);
+          ctx.lineTo(x, sy + spikeH);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    loadLevel(0);
+    gameLoop();
+  </script>
+</body>
+</html>

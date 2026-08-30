@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Vaso Feliz: Física Líquida - ezze.games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #38bdf8;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --dark: #0f172a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #gameWrapper {
+      position: relative;
+      width: 800px;
+      height: 540px;
+      max-width: 96vw;
+      max-height: 92vh;
+      background: #f8fafc;
+      border: 4px solid var(--primary);
+      border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      background: #ffffff;
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      z-index: 10;
+    }
+
+    .level-badge {
+      font-family: 'Bungee', cursive;
+      font-size: 18px;
+      color: #0f172a;
+    }
+
+    /* MEDIDOR DE TINTA CON ESTRELLAS */
+    .ink-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 240px;
+    }
+
+    .ink-stars {
+      display: flex;
+      gap: 12px;
+      font-size: 18px;
+    }
+
+    .star-item {
+      color: #cbd5e1;
+      transition: all 0.3s ease;
+    }
+
+    .star-item.active {
+      color: #f59e0b;
+      transform: scale(1.15);
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+
+    .ink-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ink-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+      border-radius: 6px;
+      transition: width 0.08s linear;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-action {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      color: #0f172a;
+      font-family: 'Bungee', cursive;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: #e2e8f0;
+      transform: translateY(-2px);
+    }
+
+    /* CANVAS DE FÍSICA */
+    canvas#gameCanvas {
+      flex: 1;
+      background: #f1f5f9;
+      cursor: crosshair;
+      display: block;
+      touch-action: none;
+    }
+
+    /* MODAL DE VICTORIA */
+    .victory-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .victory-modal.hidden {
+      display: none;
+    }
+
+    .victory-box {
+      background: #fff;
+      border: 4px solid var(--primary);
+      border-radius: 24px;
+      padding: 28px 36px;
+      max-width: 440px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      animation: popWin 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popWin {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .victory-stars {
+      display: flex;
+      gap: 14px;
+      font-size: 48px;
+    }
+
+    .vic-star {
+      filter: grayscale(100%) opacity(30%);
+      transition: all 0.4s ease;
+    }
+
+    .vic-star.active {
+      filter: grayscale(0%) opacity(100%);
+      transform: scale(1.2);
+    }
+
+    .btn-next-level {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #fff;
+      font-family: 'Bungee', cursive;
+      font-size: 16px;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #0369a1;
+      transition: all 0.1s ease;
+      width: 100%;
+    }
+
+    .btn-next-level:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 #0369a1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="gameWrapper">
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+      <div class="level-badge" id="levelLabel">NIVEL 1</div>
+
+      <!-- Medidor de Tinta -->
+      <div class="ink-container">
+        <div class="ink-stars">
+          <span class="star-item active" id="st1">⭐</span>
+          <span class="star-item active" id="st2">⭐</span>
+          <span class="star-item active" id="st3">⭐</span>
+        </div>
+        <div class="ink-bar-bg">
+          <div class="ink-bar-fill" id="inkFill"></div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn-action" id="btnRestart">🔄 REINICIAR</button>
+      </div>
+    </div>
+
+    <!-- CANVAS INTERACTIVO -->
+    <canvas id="gameCanvas" width="800" height="460"></canvas>
+
+    <!-- MODAL DE VICTORIA -->
+    <div class="victory-modal hidden" id="victoryModal">
+      <div class="victory-box">
+        <span style="font-size: 54px;">🥛🥰</span>
+        <h2 style="font-family: 'Bungee', cursive; color: #0284c7; font-size: 28px;">¡VASO FELIZ!</h2>
+        <div class="victory-stars">
+          <span class="vic-star active" id="vs1">⭐</span>
+          <span class="vic-star active" id="vs2">⭐</span>
+          <span class="vic-star active" id="vs3">⭐</span>
+        </div>
+        <p style="color: #475569; font-weight: 600;">¡El agua llenó el vaso a la perfección!</p>
+        <button class="btn-next-level" id="btnNextLevel">SIGUIENTE NIVEL ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * MOTOR DE AUDIO PROCEDURAL (Sintetizador Web Audio)
+     */
+    class AudioWaterEngine {
+      constructor() { this.ctx = null; }
+      init() {
+        if (!this.ctx) {
+          const C = window.AudioContext || window.webkitAudioContext;
+          if (C) this.ctx = new C();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      playDraw() {
+        if (!this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(180, now);
+        o.frequency.linearRampToValueAtTime(260, now + 0.05);
+        g.gain.setValueAtTime(0.08, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(now); o.stop(now + 0.07);
+      }
+      playSplash() {
+        if (!this.ctx) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(450 + Math.random() * 200, now);
+        o.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+        g.gain.setValueAtTime(0.09, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(now); o.stop(now + 0.1);
+      }
+      playWin() {
+        if (!this.ctx) return;
+        this.init();
+        [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+          const now = this.ctx.currentTime + i * 0.1;
+          const o = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(0.25, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          o.connect(g); g.connect(this.ctx.destination);
+          o.start(now); o.stop(now + 0.4);
+        });
+      }
+    }
+
+    const sound = new AudioWaterEngine();
+
+    /**
+     * DEFINICIÓN DE LOS 8 NIVELES DE FÍSICA
+     */
+    const LEVELS = [
+      {
+        name: "Nivel 1: Primer Trazo",
+        tap: { x: 180, y: 50 },
+        glass: { x: 600, y: 340, w: 90, h: 100, targetWater: 45 },
+        obstacles: [],
+        maxInk: 400
+      },
+      {
+        name: "Nivel 2: El Desvío",
+        tap: { x: 650, y: 50 },
+        glass: { x: 160, y: 340, w: 90, h: 100, targetWater: 45 },
+        obstacles: [
+          { x: 380, y: 150, w: 40, h: 220 }
+        ],
+        maxInk: 500
+      },
+      {
+        name: "Nivel 3: Embudo Maestro",
+        tap: { x: 400, y: 50 },
+        glass: { x: 400, y: 360, w: 85, h: 95, targetWater: 40 },
+        obstacles: [
+          { x: 260, y: 180, w: 80, h: 30 },
+          { x: 460, y: 180, w: 80, h: 30 }
+        ],
+        maxInk: 450
+      },
+      {
+        name: "Nivel 4: Vaso en Equilibrio",
+        tap: { x: 200, y: 50 },
+        glass: { x: 550, y: 280, w: 90, h: 100, targetWater: 45 },
+        obstacles: [
+          { x: 580, y: 390, w: 30, h: 70 } // Soporte delgado
+        ],
+        maxInk: 500
+      },
+      {
+        name: "Nivel 5: Las Barreras",
+        tap: { x: 160, y: 50 },
+        glass: { x: 640, y: 340, w: 90, h: 100, targetWater: 45 },
+        obstacles: [
+          { x: 320, y: 120, w: 30, h: 140 },
+          { x: 480, y: 240, w: 30, h: 140 }
+        ],
+        maxInk: 550
+      },
+      {
+        name: "Nivel 6: Salto de Cascada",
+        tap: { x: 140, y: 50 },
+        glass: { x: 660, y: 320, w: 90, h: 100, targetWater: 45 },
+        obstacles: [
+          { x: 350, y: 220, w: 100, h: 40 }
+        ],
+        maxInk: 500
+      },
+      {
+        name: "Nivel 7: Doble Obstáculo",
+        tap: { x: 400, y: 50 },
+        glass: { x: 200, y: 340, w: 90, h: 100, targetWater: 40 },
+        obstacles: [
+          { x: 320, y: 180, w: 160, h: 30 },
+          { x: 100, y: 240, w: 30, h: 120 }
+        ],
+        maxInk: 550
+      },
+      {
+        name: "Nivel 8: El Gran Desafío",
+        tap: { x: 400, y: 40 },
+        glass: { x: 620, y: 350, w: 85, h: 95, targetWater: 40 },
+        obstacles: [
+          { x: 240, y: 140, w: 320, h: 25 },
+          { x: 480, y: 250, w: 30, h: 120 }
+        ],
+        maxInk: 600
+      }
+    ];
+
+    /**
+     * MOTOR DE FÍSICA Y DIBUJO
+     */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentLevelIdx = 0;
+    let level = null;
+
+    let particles = [];
+    let lines = [];
+    let currentLine = null;
+    let isDrawing = false;
+    let inkUsed = 0;
+    let waterInGlass = 0;
+    let levelWon = false;
+    let waterSpawnTimer = 0;
+    let spawnedWaterCount = 0;
+    const TOTAL_WATER_DROPS = 90;
+
+    function loadLevel(idx) {
+      currentLevelIdx = idx;
+      level = JSON.parse(JSON.stringify(LEVELS[idx]));
+
+      document.getElementById('levelLabel').textContent = `NIVEL ${idx + 1}`;
+      document.getElementById('victoryModal').classList.add('hidden');
+
+      particles = [];
+      lines = [];
+      currentLine = null;
+      isDrawing = false;
+      inkUsed = 0;
+      waterInGlass = 0;
+      levelWon = false;
+      waterSpawnTimer = 0;
+      spawnedWaterCount = 0;
+
+      updateInkBar();
+    }
+
+    function updateInkBar() {
+      const max = level.maxInk;
+      const pct = Math.max(0, 100 - (inkUsed / max) * 100);
+      document.getElementById('inkFill').style.width = `${pct}%`;
+
+      const st1 = document.getElementById('st1');
+      const st2 = document.getElementById('st2');
+      const st3 = document.getElementById('st3');
+
+      st3.className = pct > 65 ? 'star-item active' : 'star-item';
+      st2.className = pct > 35 ? 'star-item active' : 'star-item';
+      st1.className = pct > 0 ? 'star-item active' : 'star-item';
+    }
+
+    /**
+     * EVENTOS DE DIBUJO
+     */
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      if (e.touches && e.touches.length > 0) {
+        return {
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+      }
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    };
+
+    const startDraw = (e) => {
+      sound.init();
+      if (levelWon || inkUsed >= level.maxInk) return;
+      isDrawing = true;
+      const p = getPos(e);
+      currentLine = [p];
+      sound.playDraw();
+    };
+
+    const moveDraw = (e) => {
+      if (!isDrawing || !currentLine || inkUsed >= level.maxInk) return;
+      const p = getPos(e);
+      const last = currentLine[currentLine.length - 1];
+      const dist = Math.hypot(p.x - last.x, p.y - last.y);
+
+      if (dist > 8) {
+        currentLine.push(p);
+        inkUsed += dist;
+        updateInkBar();
+        sound.playDraw();
+      }
+    };
+
+    const endDraw = () => {
+      if (isDrawing && currentLine && currentLine.length > 1) {
+        lines.push(currentLine);
+      }
+      isDrawing = false;
+      currentLine = null;
+    };
+
+    canvas.addEventListener('mousedown', startDraw);
+    window.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+
+    canvas.addEventListener('touchstart', startDraw);
+    window.addEventListener('touchmove', moveDraw);
+    window.addEventListener('touchend', endDraw);
+
+    document.getElementById('btnRestart').addEventListener('click', () => loadLevel(currentLevelIdx));
+    document.getElementById('btnNextLevel').addEventListener('click', () => {
+      const next = (currentLevelIdx + 1) % LEVELS.length;
+      loadLevel(next);
+    });
+
+    /**
+     * BUCLE PRINCIPAL DE FÍSICAS
+     */
+    function updatePhysics() {
+      // 1. Generar gotas de agua desde el grifo
+      if (spawnedWaterCount < TOTAL_WATER_DROPS) {
+        waterSpawnTimer++;
+        if (waterSpawnTimer % 2 === 0) {
+          particles.push({
+            x: level.tap.x + (Math.random() - 0.5) * 8,
+            y: level.tap.y + 12,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: Math.random() * 2 + 1,
+            r: 5,
+            inGlass: false
+          });
+          spawnedWaterCount++;
+        }
+      }
+
+      // 2. Físicas de cada gota
+      const GRAV = 0.38;
+      const gl = level.glass;
+      const glassLeft = gl.x - gl.w / 2;
+      const glassRight = gl.x + gl.w / 2;
+      const glassBottom = gl.y + gl.h / 2;
+      const glassTop = gl.y - gl.h / 2;
+
+      waterInGlass = 0;
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.vy += GRAV;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Fricción
+        p.vx *= 0.985;
+        p.vy *= 0.985;
+
+        // Colisión con paredes del vaso
+        // Pared Izquierda del vaso
+        if (p.x + p.r > glassLeft && p.x - p.r < glassLeft + 10 && p.y > glassTop && p.y < glassBottom) {
+          p.x = glassLeft - p.r;
+          p.vx = -p.vx * 0.3;
+        }
+        // Pared Derecha del vaso
+        if (p.x - p.r < glassRight && p.x + p.r > glassRight - 10 && p.y > glassTop && p.y < glassBottom) {
+          p.x = glassRight + p.r;
+          p.vx = -p.vx * 0.3;
+        }
+        // Fondo del vaso
+        if (p.x > glassLeft && p.x < glassRight && p.y + p.r > glassBottom - 10 && p.y < glassBottom + 20) {
+          p.y = glassBottom - 10 - p.r;
+          p.vy = -p.vy * 0.2;
+          p.vx *= 0.8;
+          p.inGlass = true;
+        }
+
+        // Si está acumulado dentro del vaso
+        if (p.x > glassLeft + 6 && p.x < glassRight - 6 && p.y > glassTop && p.y <= glassBottom) {
+          p.inGlass = true;
+          waterInGlass++;
+        }
+
+        // Colisión con Obstáculos
+        level.obstacles.forEach(ob => {
+          if (p.x + p.r > ob.x && p.x - p.r < ob.x + ob.w && p.y + p.r > ob.y && p.y - p.r < ob.y + ob.h) {
+            // Rebotar hacia afuera
+            if (p.y < ob.y + 12) {
+              p.y = ob.y - p.r;
+              p.vy = -p.vy * 0.35;
+            } else {
+              p.vx = -p.vx * 0.5;
+            }
+          }
+        });
+
+        // Colisión con Líneas Dibujadas por el Jugador
+        const allLines = currentLine ? [...lines, currentLine] : lines;
+        allLines.forEach(line => {
+          for (let k = 0; k < line.length - 1; k++) {
+            const p1 = line[k];
+            const p2 = line[k + 1];
+            collideCircleSegment(p, p1, p2);
+          }
+        });
+
+        // Eliminar gotas que caen al vacío
+        if (p.y > canvas.height + 50) {
+          particles.splice(i, 1);
+        }
+      }
+
+      // 3. Comprobar Victoria
+      if (waterInGlass >= level.glass.targetWater && !levelWon) {
+        levelWon = true;
+        sound.playWin();
+        triggerVictory();
+      }
+    }
+
+    function collideCircleSegment(circle, p1, p2) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) return;
+
+      let t = ((circle.x - p1.x) * dx + (circle.y - p1.y) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+
+      const closeX = p1.x + t * dx;
+      const closeY = p1.y + t * dy;
+
+      const distX = circle.x - closeX;
+      const distY = circle.y - closeY;
+      const dist = Math.hypot(distX, distY);
+      const THICKNESS = 5; // Grosor de la línea
+
+      if (dist < circle.r + THICKNESS) {
+        const nx = distX / (dist || 1);
+        const ny = distY / (dist || 1);
+        const overlap = (circle.r + THICKNESS) - dist;
+
+        circle.x += nx * overlap;
+        circle.y += ny * overlap;
+
+        const dot = circle.vx * nx + circle.vy * ny;
+        circle.vx = (circle.vx - 2 * dot * nx) * 0.45;
+        circle.vy = (circle.vy - 2 * dot * ny) * 0.45;
+      }
+    }
+
+    function triggerVictory() {
+      const pct = Math.max(0, 100 - (inkUsed / level.maxInk) * 100);
+      document.getElementById('vs3').className = pct > 65 ? 'vic-star active' : 'vic-star';
+      document.getElementById('vs2').className = pct > 35 ? 'vic-star active' : 'vic-star';
+      document.getElementById('vs1').className = pct > 0 ? 'vic-star active' : 'vic-star';
+      document.getElementById('victoryModal').classList.remove('hidden');
+    }
+
+    /**
+     * DIBUJADO EN CANVAS
+     */
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Cuadrícula tenue
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      if (!level) return;
+
+      // 2. Grifo de Agua
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(level.tap.x - 20, 0, 40, level.tap.y);
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(level.tap.x, level.tap.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(level.tap.x - 6, level.tap.y, 12, 10);
+
+      // 3. Obstáculos
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 3;
+      level.obstacles.forEach(ob => {
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.strokeRect(ob.x, ob.y, ob.w, ob.h);
+      });
+
+      // 4. Gotas de Agua Fluidas
+      particles.forEach(p => {
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 5. Líneas Dibujadas por el Jugador
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 9;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const allLines = currentLine ? [...lines, currentLine] : lines;
+      allLines.forEach(line => {
+        if (line.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(line[0].x, line[0].y);
+        for (let i = 1; i < line.length; i++) {
+          ctx.lineTo(line[i].x, line[i].y);
+        }
+        ctx.stroke();
+      });
+
+      // 6. El Vaso y su Cara Expresiva
+      drawGlass(level.glass);
+    }
+
+    function drawGlass(gl) {
+      const left = gl.x - gl.w / 2;
+      const right = gl.x + gl.w / 2;
+      const top = gl.y - gl.h / 2;
+      const bottom = gl.y + gl.h / 2;
+
+      // Línea de meta punteada
+      ctx.strokeStyle = 'rgba(2, 132, 199, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(left, top + 25);
+      ctx.lineTo(right, top + 25);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Contorno del vaso
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(left, top);
+      ctx.lineTo(left, bottom);
+      ctx.lineTo(right, bottom);
+      ctx.lineTo(right, top);
+      ctx.stroke();
+
+      // Cara del Vaso (Reactiva al nivel de agua)
+      const fillPct = waterInGlass / gl.targetWater;
+      const cx = gl.x;
+      const cy = gl.y + 10;
+
+      if (fillPct < 0.25) {
+        // Triste 😢
+        drawEye(cx - 16, cy - 8, false);
+        drawEye(cx + 16, cy - 8, false);
+        // Boca triste
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy + 18, 12, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.stroke();
+        // Lágrima
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(cx - 16, cy + 4, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (fillPct < 0.85) {
+        // Sorprendido 😮
+        drawEye(cx - 16, cy - 8, true);
+        drawEye(cx + 16, cy - 8, true);
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy + 12, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // ¡Súper Feliz! 😄
+        drawHappyEye(cx - 16, cy - 8);
+        drawHappyEye(cx + 16, cy - 8);
+        // Boca sonriente grande
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(cx, cy + 8, 14, 0, Math.PI);
+        ctx.fill();
+        // Mejillas sonrojadas
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+        ctx.beginPath();
+        ctx.arc(cx - 24, cy + 8, 6, 0, Math.PI * 2);
+        ctx.arc(cx + 24, cy + 8, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawEye(x, y, open) {
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.arc(x, y, open ? 5 : 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHappyEye(x, y) {
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y + 2, 6, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+    }
+
+    function loop() {
+      updatePhysics();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loadLevel(0);
+    loop();
+  </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Magic Draw & Drive - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Outfit', sans-serif; }
+    body { background: #0f172a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #canvasWrap { position: relative; width: 100%; height: 100%; max-width: 720px; max-height: 480px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 2px solid #38bdf8; border-radius: 16px; overflow: hidden; }
+    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #0284c7 0%, #38bdf8 65%, #1e293b 65%, #0f172a 100%); cursor: crosshair; }
+    .hud { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; color: #0f172a; z-index: 10; pointer-events: none; }
+    .hud-pill { background: rgba(255, 255, 255, 0.9); padding: 4px 12px; border-radius: 12px; border: 2px solid #0f172a; }
+    .controls-bar { position: absolute; bottom: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; z-index: 20; pointer-events: none; }
+    .btn-act { pointer-events: auto; background: #1e293b; border: 2px solid #fff; color: #fff; font-family: 'Bungee'; font-size: 16px; padding: 10px 20px; border-radius: 12px; cursor: pointer; transition: transform 0.1s; }
+    .btn-act:active { transform: scale(0.95); }
+    .btn-drive { background: #10b981; border-color: #34d399; }
+    .btn-clear { background: #ef4444; border-color: #f87171; }
+    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; z-index: 30; }
+    .overlay.hidden { display: none; }
+    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 20px; padding: 12px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 0 #ca8a04; }
+  </style>
+</head>
+<body>
+  <div id="canvasWrap">
+    <div class="hud">
+      <div class="hud-pill">✏️ NIVEL: <span id="lvlText">1</span></div>
+      <div class="hud-pill">⭐ MONEDAS: <span id="coinsText">0/3</span></div>
+    </div>
+    <canvas id="drawCanvas" width="720" height="480"></canvas>
+    <div class="controls-bar">
+      <button class="btn-act btn-clear" onclick="clearLines()">🧹 BORRAR LÍNEA</button>
+      <button class="btn-act btn-drive" id="btnDrive" onclick="toggleDrive()">🚗 ¡ARRANCAR!</button>
+    </div>
+    <div class="overlay" id="startScreen">
+      <h1 style="font-family: 'Bungee'; font-size: 36px; color: #38bdf8;">MAGIC DRAW & DRIVE</h1>
+      <p style="font-size: 16px; color: #cbd5e1; max-width: 380px;">¡Dibuja con tu dedo un puente o rampa mágica para que el coche cruce el abismo hasta la meta!</p>
+      <button class="btn-play" onclick="startGame()">¡A DIBUJAR!</button>
+    </div>
+    <div class="overlay hidden" id="winScreen">
+      <h1 style="font-family: 'Bungee'; font-size: 32px; color: #10b981;">🏁 ¡LLEGASTE A LA META! 🏁</h1>
+      <p style="font-size: 18px; color: #cbd5e1;">¡Puente construido con éxito!</p>
+      <button class="btn-play" onclick="nextLevel()">SIGUIENTE RETO</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let lines = [];
+    let currentLine = [];
+    let isDrawing = false;
+    let isDriving = false;
+    let level = 1;
+    let coinsCollected = 0;
+
+    let car = { x: 70, y: 280, vx: 0, vy: 0, angle: 0, angVel: 0 };
+    let coins = [];
+    let finishX = 630;
+    let startCliff = { x: 0, y: 310, w: 140 };
+    let endCliff = { x: 580, y: 310, w: 140 };
+
+    let audioCtx = null;
+    function playTone(freq, dur = 0.1) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+      } catch(e){}
+    }
+
+    function initLevel(lvl) {
+      lines = [];
+      currentLine = [];
+      isDriving = false;
+      car = { x: 70, y: 280, vx: 0, vy: 0, angle: 0, angVel: 0 };
+      coinsCollected = 0;
+
+      if (lvl === 1) {
+        startCliff = { x: 0, y: 310, w: 150 };
+        endCliff = { x: 570, y: 310, w: 150 };
+        finishX = 630;
+        coins = [{ x: 300, y: 240, taken: false }, { x: 420, y: 240, taken: false }];
+      } else {
+        startCliff = { x: 0, y: 240, w: 130 };
+        endCliff = { x: 560, y: 360, w: 160 };
+        finishX = 630;
+        coins = [{ x: 260, y: 280, taken: false }, { x: 380, y: 320, taken: false }, { x: 480, y: 300, taken: false }];
+      }
+
+      document.getElementById('lvlText').textContent = lvl;
+      document.getElementById('coinsText').textContent = `0/${coins.length}`;
+      document.getElementById('btnDrive').textContent = '🚗 ¡ARRANCAR!';
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('winScreen').classList.add('hidden');
+    }
+
+    function startGame() {
+      level = 1;
+      initLevel(level);
+    }
+
+    function nextLevel() {
+      level = level === 1 ? 2 : 1;
+      initLevel(level);
+    }
+
+    function clearLines() {
+      lines = [];
+      currentLine = [];
+      car = { x: 70, y: startCliff.y - 30, vx: 0, vy: 0, angle: 0, angVel: 0 };
+      isDriving = false;
+      document.getElementById('btnDrive').textContent = '🚗 ¡ARRANCAR!';
+      playTone(250, 0.1);
+    }
+
+    function toggleDrive() {
+      isDriving = !isDriving;
+      if (isDriving) {
+        car.vx = 2.8;
+        playTone(400, 0.2);
+        document.getElementById('btnDrive').textContent = '🔄 REINICIAR';
+      } else {
+        car = { x: 70, y: startCliff.y - 30, vx: 0, vy: 0, angle: 0, angVel: 0 };
+        document.getElementById('btnDrive').textContent = '🚗 ¡ARRANCAR!';
+      }
+    }
+
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      if (isDriving) return;
+      isDrawing = true;
+      const pt = getCoords(e);
+      currentLine = [pt];
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!isDrawing) return;
+      const pt = getCoords(e);
+      currentLine.push(pt);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      if (currentLine.length > 1) lines.push(currentLine);
+      currentLine = [];
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      if (isDriving) return;
+      isDrawing = true;
+      const pt = getCoords(e);
+      currentLine = [pt];
+    }, { passive: true });
+
+    window.addEventListener('touchmove', e => {
+      if (!isDrawing || e.touches.length === 0) return;
+      const pt = getCoords(e);
+      currentLine.push(pt);
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      if (currentLine.length > 1) lines.push(currentLine);
+      currentLine = [];
+    });
+
+    function getDrawnY(x) {
+      for (const line of lines) {
+        for (let i = 0; i < line.length - 1; i++) {
+          const p1 = line[i], p2 = line[i + 1];
+          if (x >= Math.min(p1.x, p2.x) && x <= Math.max(p1.x, p2.x)) {
+            const t = (x - p1.x) / (p2.x - p1.x || 1);
+            return p1.y + t * (p2.y - p1.y);
+          }
+        }
+      }
+      return null;
+    }
+
+    function update() {
+      if (!isDriving) return;
+
+      car.vy += 0.35; // Gravedad
+      car.x += car.vx;
+      car.y += car.vy;
+
+      let groundY = null;
+
+      // Acantilado inicial
+      if (car.x >= startCliff.x && car.x <= startCliff.x + startCliff.w) {
+        groundY = startCliff.y;
+      }
+      // Acantilado final
+      else if (car.x >= endCliff.x && car.x <= endCliff.x + endCliff.w) {
+        groundY = endCliff.y;
+      }
+      // Líneas dibujadas
+      else {
+        groundY = getDrawnY(car.x);
+      }
+
+      if (groundY !== null && car.y + 16 >= groundY) {
+        car.y = groundY - 16;
+        car.vy = 0;
+        car.vx = 3.2;
+      }
+
+      // Monedas
+      coins.forEach(c => {
+        if (!c.taken && Math.hypot(car.x - c.x, car.y - c.y) < 30) {
+          c.taken = true;
+          coinsCollected++;
+          document.getElementById('coinsText').textContent = `${coinsCollected}/${coins.length}`;
+          playTone(900, 0.15);
+        }
+      });
+
+      // Llegar a la meta
+      if (car.x > finishX) {
+        isDriving = false;
+        playTone(600, 0.2);
+        setTimeout(() => playTone(1200, 0.3), 150);
+        document.getElementById('winScreen').classList.remove('hidden');
+      }
+
+      // Caída al abismo
+      if (car.y > canvas.height + 60) {
+        isDriving = false;
+        car = { x: 70, y: startCliff.y - 30, vx: 0, vy: 0, angle: 0, angVel: 0 };
+        document.getElementById('btnDrive').textContent = '🚗 ¡ARRANCAR!';
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Acantilados
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(startCliff.x, startCliff.y, startCliff.w, canvas.height - startCliff.y);
+      ctx.fillRect(endCliff.x, endCliff.y, endCliff.w, canvas.height - endCliff.y);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(startCliff.x, startCliff.y, startCliff.w, 10);
+      ctx.fillRect(endCliff.x, endCliff.y, endCliff.w, 10);
+
+      // Meta
+      ctx.font = '28px Arial';
+      ctx.fillText('🏁', finishX, endCliff.y - 10);
+
+      // Monedas
+      coins.forEach(c => {
+        if (!c.taken) {
+          ctx.font = '24px Arial';
+          ctx.fillText('⭐', c.x, c.y);
+        }
+      });
+
+      // Líneas dibujadas
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      lines.forEach(l => {
+        if (l.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(l[0].x, l[0].y);
+          for (let i = 1; i < l.length; i++) ctx.lineTo(l[i].x, l[i].y);
+          ctx.stroke();
+        }
+      });
+
+      if (currentLine.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(currentLine[0].x, currentLine[0].y);
+        for (let i = 1; i < currentLine.length; i++) ctx.lineTo(currentLine[i].x, currentLine[i].y);
+        ctx.stroke();
+      }
+
+      // Coche de Juguete
+      ctx.save();
+      ctx.translate(car.x, car.y);
+
+      // Carrocería
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(-18, -12, 36, 16);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-8, -20, 20, 10); // Ventanas
+
+      // Ruedas
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(-12, 6, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(12, 6, 6, 0, Math.PI * 2); ctx.fill();
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>

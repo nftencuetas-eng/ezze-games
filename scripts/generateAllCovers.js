@@ -5,120 +5,72 @@ const coversDir = path.join(__dirname, '..', 'client', 'assets', 'covers');
 if (!fs.existsSync(coversDir)) fs.mkdirSync(coversDir, { recursive: true });
 
 const svgs = {
-  'math-monsters': `
+  'slingshot-rescue': `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b" />
-      <stop offset="50%" stop-color="#312e81" />
-      <stop offset="100%" stop-color="#4338ca" />
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#86efac" />
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🐲</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">MATH MONSTERS</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#818cf8" letter-spacing="6">BATALLA MATEMATICA EDUCATIVA</text>
+  <text x="640" y="270" font-size="120" text-anchor="middle">🎯</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="70" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">SLINGSHOT RESCUE</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#0f172a" letter-spacing="6">TIRACHINAS Y FISICAS</text>
 </svg>`,
 
-  'memory-safari': `
+  'magic-draw': `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#064e3b" />
-      <stop offset="50%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#10b981" />
+      <stop offset="0%" stop-color="#0369a1" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0f172a" />
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🦁</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#fef08a" filter="url(#glow)">SAFARI MEMORY</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fff" letter-spacing="6">JUEGO DE MEMORIA Y CONCENTRACION</text>
+  <text x="640" y="270" font-size="120" text-anchor="middle">✏️🚗</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="68" font-weight="900" text-anchor="middle" fill="#38bdf8" filter="url(#glow)">MAGIC DRAW &amp; DRIVE</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#facc15" letter-spacing="6">DIBUJA TU CAMINO Y PUENTES</text>
 </svg>`,
 
-  'quiz-trivia': `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b0764" />
-      <stop offset="50%" stop-color="#581c87" />
-      <stop offset="100%" stop-color="#7e22ce" />
-    </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
-  <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🧠</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">TRIVIA ESCOLAR</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#e9d5ff" letter-spacing="6">CIENCIAS, PLANETAS Y CULTURA</text>
-</svg>`,
-
-  'jigsaw-puzzle': `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e3a8a" />
-      <stop offset="50%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#3b82f6" />
-    </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
-  <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🦖</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">KIDS JIGSAW WORLD</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#dbeafe" letter-spacing="6">ROMPECABEZAS ILUSTRADOS</text>
-</svg>`,
-
-  'fruit-slice': `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1c1917" />
-      <stop offset="50%" stop-color="#292524" />
-      <stop offset="100%" stop-color="#44403c" />
-    </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
-  <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🍉</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#ef4444" filter="url(#glow)">FRUIT SLICE MASTER</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#facc15" letter-spacing="6">CORTE NINJA DE FRUTAS</text>
-</svg>`,
-
-  'candy-match': `
+  'virtual-pet': `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#831843" />
-      <stop offset="50%" stop-color="#be185d" />
-      <stop offset="100%" stop-color="#ec4899" />
+      <stop offset="50%" stop-color="#db2777" />
+      <stop offset="100%" stop-color="#f472b6" />
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🍬</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">CANDY KINGDOM</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fce7f3" letter-spacing="6">MATCH-3 DULCES COLORIDOS</text>
+  <text x="640" y="270" font-size="120" text-anchor="middle">🐱💖</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="70" font-weight="900" text-anchor="middle" fill="#fef08a" filter="url(#glow)">MI MASCOTA VIRTUAL</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#fff" letter-spacing="6">CUIDA, ALIMENTA Y VISTE</text>
 </svg>`,
 
-  'bubble-shooter': `
+  'party-duels': `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#075985" />
-      <stop offset="50%" stop-color="#0284c7" />
-      <stop offset="100%" stop-color="#38bdf8" />
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#020617" />
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
-  <text x="640" y="270" font-size="120" text-anchor="middle">🔮</text>
-  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="72" font-weight="900" text-anchor="middle" fill="#facc15" filter="url(#glow)">BUBBLE SHOOTER</text>
-  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#e0f2fe" letter-spacing="6">EXPLOSION DE BURBUJAS</text>
+  <text x="640" y="270" font-size="120" text-anchor="middle">🥊🔴🔵</text>
+  <text x="640" y="440" font-family="'Bungee', sans-serif" font-size="68" font-weight="900" text-anchor="middle" fill="#38bdf8" filter="url(#glow)">DUELO 2 JUGADORES</text>
+  <text x="640" y="510" font-family="'Bungee', sans-serif" font-size="30" text-anchor="middle" fill="#ef4444" letter-spacing="6">1 VS 1 EN LA MISMA PANTALLA</text>
 </svg>`
 };
 
 for (const [slug, content] of Object.entries(svgs)) {
   fs.writeFileSync(path.join(coversDir, `${slug}.svg`), content.trim());
-  console.log(`✓ Portada HD lista: ${slug}`);
+  console.log(`✓ Portada HD generada: ${slug}`);
 }

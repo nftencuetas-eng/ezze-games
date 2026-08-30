@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Slingshot Animal Rescue - ezze.games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; font-family: 'Outfit', sans-serif; }
+    body { background: #0f172a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #canvasWrap { position: relative; width: 100%; height: 100%; max-width: 720px; max-height: 480px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 2px solid #334155; border-radius: 16px; overflow: hidden; }
+    canvas { width: 100%; height: 100%; display: block; background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 65%, #86efac 65%, #22c55e 100%); }
+    .hud { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; color: #0f172a; z-index: 10; pointer-events: none; }
+    .hud-pill { background: rgba(255, 255, 255, 0.9); padding: 4px 12px; border-radius: 12px; border: 2px solid #0f172a; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; z-index: 30; }
+    .overlay.hidden { display: none; }
+    .btn-play { background: #facc15; color: #000; font-family: 'Bungee'; font-size: 20px; padding: 12px 34px; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 0 #ca8a04; }
+  </style>
+</head>
+<body>
+  <div id="canvasWrap">
+    <div class="hud">
+      <div class="hud-pill">🎯 NIVEL: <span id="lvlText">1</span></div>
+      <div class="hud-pill">⭐ PUNTOS: <span id="scoreText">0</span></div>
+      <div class="hud-pill">🐾 RESCATADOS: <span id="rescuedText">0/2</span></div>
+    </div>
+    <canvas id="gameCanvas" width="720" height="480"></canvas>
+    <div class="overlay" id="startScreen">
+      <h1 style="font-family: 'Bungee'; font-size: 36px; color: #facc15;">SLINGSHOT RESCUE</h1>
+      <p style="font-size: 16px; color: #cbd5e1; max-width: 380px;">¡Estira el tirachinas con el dedo, apunta y destruye las jaulas para salvar a las mascotas!</p>
+      <button class="btn-play" onclick="startGame()">¡A RESCATAR!</button>
+    </div>
+    <div class="overlay hidden" id="winScreen">
+      <h1 style="font-family: 'Bungee'; font-size: 32px; color: #4ade80;">🎉 ¡MASCOTAS RESCATADAS! 🎉</h1>
+      <p style="font-size: 18px; color: #cbd5e1;">Puntos del nivel: <strong id="finalScore" style="color: #facc15;">0</strong></p>
+      <button class="btn-play" onclick="nextLevel()">SIGUIENTE NIVEL</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const SLING_X = 140;
+    const SLING_Y = 320;
+
+    let bird = { x: SLING_X, y: SLING_Y, vx: 0, vy: 0, r: 18, launched: false, settled: false };
+    let isDragging = false;
+    let dragPos = { x: SLING_X, y: SLING_Y };
+    let blocks = [];
+    let cages = [];
+    let particles = [];
+    let score = 0;
+    let level = 1;
+    let isPlaying = false;
+
+    let audioCtx = null;
+    function playSound(freq, dur = 0.1, type = 'sine') {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+      } catch(e){}
+    }
+
+    function initLevel(lvl) {
+      bird = { x: SLING_X, y: SLING_Y, vx: 0, vy: 0, r: 18, launched: false, settled: false };
+      dragPos = { x: SLING_X, y: SLING_Y };
+      isDragging = false;
+      blocks = [];
+      cages = [];
+      particles = [];
+
+      if (lvl === 1) {
+        // Estructura simple
+        blocks.push({ x: 500, y: 350, w: 20, h: 80, hp: 2, color: '#b45309' });
+        blocks.push({ x: 580, y: 350, w: 20, h: 80, hp: 2, color: '#b45309' });
+        blocks.push({ x: 490, y: 260, w: 120, h: 18, hp: 2, color: '#b45309' });
+        cages.push({ x: 540, y: 340, w: 36, h: 36, animal: '🐶', rescued: false });
+        cages.push({ x: 540, y: 220, w: 36, h: 36, animal: '🐱', rescued: false });
+      } else {
+        // Estructura castillo
+        blocks.push({ x: 460, y: 330, w: 24, h: 100, hp: 3, color: '#64748b' });
+        blocks.push({ x: 550, y: 330, w: 24, h: 100, hp: 3, color: '#64748b' });
+        blocks.push({ x: 640, y: 330, w: 24, h: 100, hp: 3, color: '#64748b' });
+        blocks.push({ x: 440, y: 220, w: 230, h: 20, hp: 2, color: '#b45309' });
+        cages.push({ x: 500, y: 340, w: 36, h: 36, animal: '🐰', rescued: false });
+        cages.push({ x: 590, y: 340, w: 36, h: 36, animal: '🐼', rescued: false });
+        cages.push({ x: 545, y: 180, w: 36, h: 36, animal: '🦁', rescued: false });
+      }
+
+      document.getElementById('lvlText').textContent = lvl;
+      document.getElementById('rescuedText').textContent = `0/${cages.length}`;
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('winScreen').classList.add('hidden');
+      isPlaying = true;
+    }
+
+    function startGame() {
+      score = 0;
+      level = 1;
+      document.getElementById('scoreText').textContent = '0';
+      initLevel(level);
+    }
+
+    function nextLevel() {
+      level = level === 1 ? 2 : 1;
+      initLevel(level);
+    }
+
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    function onDown(e) {
+      if (!isPlaying || bird.launched) return;
+      const pos = getCoords(e);
+      if (Math.hypot(pos.x - SLING_X, pos.y - SLING_Y) < 50) {
+        isDragging = true;
+      }
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      const pos = getCoords(e);
+      const dist = Math.min(80, Math.hypot(pos.x - SLING_X, pos.y - SLING_Y));
+      const angle = Math.atan2(pos.y - SLING_Y, pos.x - SLING_X);
+      dragPos.x = SLING_X + Math.cos(angle) * dist;
+      dragPos.y = SLING_Y + Math.sin(angle) * dist;
+      bird.x = dragPos.x;
+      bird.y = dragPos.y;
+    }
+
+    function onUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      bird.launched = true;
+      bird.vx = (SLING_X - dragPos.x) * 0.28;
+      bird.vy = (SLING_Y - dragPos.y) * 0.28;
+      playSound(350, 0.15, 'triangle');
+    }
+
+    canvas.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, { passive: false });
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp);
+
+    function update() {
+      if (!isPlaying) return;
+
+      // Pájaro en vuelo
+      if (bird.launched && !bird.settled) {
+        bird.vy += 0.38; // Gravedad
+        bird.x += bird.vx;
+        bird.y += bird.vy;
+
+        // Choque suelo
+        if (bird.y + bird.r > 380) {
+          bird.y = 380 - bird.r;
+          bird.vy *= -0.3;
+          bird.vx *= 0.7;
+          if (Math.abs(bird.vx) < 0.2 && Math.abs(bird.vy) < 0.5) {
+            bird.settled = true;
+            setTimeout(() => {
+              if (cages.some(c => !c.rescued)) {
+                // Relanzar si quedan jaulas
+                bird = { x: SLING_X, y: SLING_Y, vx: 0, vy: 0, r: 18, launched: false, settled: false };
+                dragPos = { x: SLING_X, y: SLING_Y };
+              }
+            }, 1000);
+          }
+        }
+
+        // Colisión pájaro con bloques
+        blocks.forEach(b => {
+          if (b.hp > 0 && bird.x + bird.r > b.x && bird.x - bird.r < b.x + b.w && bird.y + bird.r > b.y && bird.y - bird.r < b.y + b.h) {
+            b.hp--;
+            bird.vx *= 0.5;
+            score += 50;
+            document.getElementById('scoreText').textContent = score;
+            playSound(180, 0.1, 'sawtooth');
+
+            for (let i = 0; i < 6; i++) {
+              particles.push({ x: bird.x, y: bird.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, r: 3, color: b.color, alpha: 1 });
+            }
+          }
+        });
+
+        // Colisión pájaro con jaulas
+        cages.forEach(c => {
+          if (!c.rescued && bird.x + bird.r > c.x && bird.x - bird.r < c.x + c.w && bird.y + bird.r > c.y && bird.y - bird.r < c.y + c.h) {
+            c.rescued = true;
+            score += 200;
+            document.getElementById('scoreText').textContent = score;
+            playSound(800, 0.2);
+            setTimeout(() => playSound(1200, 0.3), 150);
+
+            for (let i = 0; i < 15; i++) {
+              particles.push({ x: c.x + 18, y: c.y + 18, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, r: 4, color: '#facc15', alpha: 1 });
+            }
+
+            const rescuedCount = cages.filter(item => item.rescued).length;
+            document.getElementById('rescuedText').textContent = `${rescuedCount}/${cages.length}`;
+
+            if (rescuedCount === cages.length) {
+              setTimeout(() => {
+                document.getElementById('finalScore').textContent = score;
+                document.getElementById('winScreen').classList.remove('hidden');
+              }, 800);
+            }
+          }
+        });
+      }
+
+      // Partículas
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.03;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Suelo
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(0, 380, canvas.width, 100);
+      ctx.fillStyle = '#86efac';
+      ctx.fillRect(0, 380, canvas.width, 8);
+
+      // Horquilla Tirachinas
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(SLING_X - 12, 380); ctx.lineTo(SLING_X - 12, SLING_Y);
+      ctx.lineTo(SLING_X + 12, SLING_Y); ctx.lineTo(SLING_X + 12, 380);
+      ctx.stroke();
+
+      // Goma del tirachinas
+      if (isDragging) {
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(SLING_X - 12, SLING_Y); ctx.lineTo(bird.x, bird.y); ctx.lineTo(SLING_X + 12, SLING_Y);
+        ctx.stroke();
+
+        // Puntos de trayectoria
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        const pVx = (SLING_X - dragPos.x) * 0.28;
+        const pVy = (SLING_Y - dragPos.y) * 0.28;
+        let simX = bird.x, simY = bird.y, simVy = pVy;
+        for (let i = 0; i < 18; i++) {
+          simVy += 0.38;
+          simX += pVx;
+          simY += simVy;
+          if (i % 3 === 0) {
+            ctx.beginPath(); ctx.arc(simX, simY, 3, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
+
+      // Bloques
+      blocks.forEach(b => {
+        if (b.hp > 0) {
+          ctx.fillStyle = b.color;
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+          ctx.strokeRect(b.x, b.y, b.w, b.h);
+        }
+      });
+
+      // Jaulas y Mascotas
+      cages.forEach(c => {
+        ctx.font = '32px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.animal, c.x + 18, c.y + 18);
+
+        if (!c.rescued) {
+          // Rejas de la jaula
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(c.x, c.y, c.w, c.h);
+          ctx.beginPath();
+          ctx.moveTo(c.x + 12, c.y); ctx.lineTo(c.x + 12, c.y + c.h);
+          ctx.moveTo(c.x + 24, c.y); ctx.lineTo(c.x + 24, c.y + c.h);
+          ctx.stroke();
+        }
+      });
+
+      // Pájaro lanzador
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5; ctx.stroke();
+      // Ojo y pico
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bird.x + 6, bird.y - 4, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(bird.x + 8, bird.y - 4, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.moveTo(bird.x + 12, bird.y); ctx.lineTo(bird.x + 22, bird.y + 3); ctx.lineTo(bird.x + 12, bird.y + 6); ctx.fill();
+
+      // Partículas
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+      });
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>

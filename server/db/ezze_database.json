@@ -1,0 +1,307 @@
+{
+  "usuarios": [
+    {
+      "id": "usr_demo_1",
+      "username": "EzeGamer",
+      "email": "eze@ezze.games",
+      "password": "123",
+      "avatar": "🦊",
+      "role": "niño",
+      "nivel": 3,
+      "xp": 240,
+      "vidas": 5,
+      "max_vidas": 5,
+      "monedas": 350,
+      "es_premium": false,
+      "fecha_fin_premium": null,
+      "tiempo_jugado_hoy": 18,
+      "limite_diario_minutos": 60,
+      "ultimo_acceso": "2026-08-31",
+      "created_at": "2026-08-31T00:39:07.541Z"
+    },
+    {
+      "id": "usr_1788136824907",
+      "username": "NiñoGamer_306",
+      "email": "niñogamer_306@ezze.local",
+      "password": "123",
+      "avatar": "🦁",
+      "role": "niño",
+      "nivel": 2,
+      "xp": 120,
+      "vidas": 4,
+      "max_vidas": 5,
+      "monedas": 155,
+      "es_premium": false,
+      "fecha_fin_premium": null,
+      "tiempo_jugado_hoy": 5,
+      "limite_diario_minutos": 60,
+      "ultimo_acceso": "2026-08-31",
+      "created_at": "2026-08-31T00:40:24.910Z"
+    },
+    {
+      "id": "usr_1788137220523",
+      "username": "NiñoGamer_442",
+      "email": "niñogamer_442@ezze.local",
+      "password": "123",
+      "avatar": "🦁",
+      "role": "niño",
+      "nivel": 2,
+      "xp": 120,
+      "vidas": 4,
+      "max_vidas": 5,
+      "monedas": 155,
+      "es_premium": false,
+      "fecha_fin_premium": null,
+      "tiempo_jugado_hoy": 5,
+      "limite_diario_minutos": 60,
+      "ultimo_acceso": "2026-08-31",
+      "created_at": "2026-08-31T00:47:00.524Z"
+    }
+  ],
+  "stickers": [
+    {
+      "id": "stk_1",
+      "nombre": "T-Rex Furia",
+      "icono": "🦖",
+      "categoria": "Dinosaurios",
+      "rareza": "Común",
+      "nivel_desbloqueo": 1,
+      "descripcion": "¡El rey del período cretácico!"
+    },
+    {
+      "id": "stk_2",
+      "nombre": "Perrito Espacial",
+      "icono": "🐶",
+      "categoria": "Animales",
+      "rareza": "Raro",
+      "nivel_desbloqueo": 2,
+      "descripcion": "¡El mejor amigo del astronauta!"
+    },
+    {
+      "id": "stk_3",
+      "nombre": "Nave Hiperbólica",
+      "icono": "🚀",
+      "categoria": "Sci-Fi",
+      "rareza": "Épico",
+      "nivel_desbloqueo": 3,
+      "descripcion": "Viaja a la velocidad de la luz."
+    },
+    {
+      "id": "stk_4",
+      "nombre": "Dragón de Fuego",
+      "icono": "🐲",
+      "categoria": "Fantasía",
+      "rareza": "Legendario",
+      "nivel_desbloqueo": 4,
+      "descripcion": "Guardián del tesoro legendario."
+    },
+    {
+      "id": "stk_5",
+      "nombre": "Super Campeón",
+      "icono": "🏆",
+      "categoria": "Logros",
+      "rareza": "Mítico",
+      "nivel_desbloqueo": 5,
+      "descripcion": "¡Para verdaderos maestros de los juegos!"
+    }
+  ],
+  "usuario_stickers": [
+    {
+      "id": "ustk_1",
+      "usuario_id": "usr_demo_1",
+      "sticker_id": "stk_1",
+      "fecha_desbloqueo": "2026-08-31T00:39:07.541Z"
+    },
+    {
+      "id": "ustk_2",
+      "usuario_id": "usr_demo_1",
+      "sticker_id": "stk_2",
+      "fecha_desbloqueo": "2026-08-31T00:39:07.541Z"
+    },
+    {
+      "id": "ustk_3",
+      "usuario_id": "usr_demo_1",
+      "sticker_id": "stk_3",
+      "fecha_desbloqueo": "2026-08-31T00:39:07.541Z"
+    },
+    {
+      "id": "ustk_1788136824911",
+      "usuario_id": "usr_1788136824907",
+      "sticker_id": "stk_1",
+      "fecha_desbloqueo": "2026-08-31T00:40:24.911Z"
+    },
+    {
+      "id": "ustk_1788136825015",
+      "usuario_id": "usr_1788136824907",
+      "sticker_id": "stk_2",
+      "fecha_desbloqueo": "2026-08-31T00:40:25.015Z"
+    },
+    {
+      "id": "ustk_1788137220524",
+      "usuario_id": "usr_1788137220523",
+      "sticker_id": "stk_1",
+      "fecha_desbloqueo": "2026-08-31T00:47:00.524Z"
+    },
+    {
+      "id": "ustk_1788137220604",
+      "usuario_id": "usr_1788137220523",
+      "sticker_id": "stk_2",
+      "fecha_desbloqueo": "2026-08-31T00:47:00.604Z"
+    }
+  ],
+  "preguntas_quiz": [
+    {
+      "id": "q_1",
+      "categoria": "Matemáticas",
+      "pregunta": "¿Cuánto es 8 × 7?",
+      "opciones": [
+        "54",
+        "56",
+        "62",
+        "49"
+      ],
+      "respuesta_correcta": "56",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_2",
+      "categoria": "Matemáticas",
+      "pregunta": "Si tienes 15 caramelos y regalas 7, ¿cuántos te quedan?",
+      "opciones": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "respuesta_correcta": "8",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_3",
+      "categoria": "Ciencias",
+      "pregunta": "¿Qué planeta de nuestro sistema solar es conocido como el Planeta Rojo?",
+      "opciones": [
+        "Venus",
+        "Marte",
+        "Júpiter",
+        "Saturno"
+      ],
+      "respuesta_correcta": "Marte",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_4",
+      "categoria": "Ciencias",
+      "pregunta": "¿Qué gas respiramos los seres humanos para vivir?",
+      "opciones": [
+        "Dióxido de carbono",
+        "Oxígeno",
+        "Helio",
+        "Nitrógeno"
+      ],
+      "respuesta_correcta": "Oxígeno",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_5",
+      "categoria": "Lenguaje",
+      "pregunta": "¿Cuál de las siguientes palabras es un sustantivo?",
+      "opciones": [
+        "Correr",
+        "Azul",
+        "Elefante",
+        "Rápidamente"
+      ],
+      "respuesta_correcta": "Elefante",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_6",
+      "categoria": "Geografía",
+      "pregunta": "¿Cuál es el océano más grande del mundo?",
+      "opciones": [
+        "Atlántico",
+        "Índico",
+        "Ártico",
+        "Pacífico"
+      ],
+      "respuesta_correcta": "Pacífico",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_7",
+      "categoria": "Naturaleza",
+      "pregunta": "¿Cuál es el animal terrestre más alto del mundo?",
+      "opciones": [
+        "Elefante",
+        "Jirafa",
+        "Oso Polar",
+        "Avestruz"
+      ],
+      "respuesta_correcta": "Jirafa",
+      "dificultad": "fácil"
+    },
+    {
+      "id": "q_8",
+      "categoria": "Matemáticas",
+      "pregunta": "¿Cuánto es la mitad de 50?",
+      "opciones": [
+        "20",
+        "25",
+        "30",
+        "15"
+      ],
+      "respuesta_correcta": "25",
+      "dificultad": "fácil"
+    }
+  ],
+  "productos_tienda": [
+    {
+      "id": "toy_1",
+      "nombre": "Pista de Autos Giratoria 360°",
+      "precio": "$24.99",
+      "imagen_url": "/assets/covers/retro-racer.jpg",
+      "link_whatsapp": "https://wa.me/595981000000?text=Hola!%20Quiero%20comprar%20la%20Pista%20de%20Autos%20360%20que%20vi%20en%20ezze.games",
+      "destacado": true,
+      "descripcion": "Pista de carreras con lanzador y vueltas acrobáticas para niños."
+    },
+    {
+      "id": "toy_2",
+      "nombre": "Bloques de Construcción Torre Gigante",
+      "precio": "$19.50",
+      "imagen_url": "/assets/covers/tower-game.jpg",
+      "link_whatsapp": "https://wa.me/595981000000?text=Hola!%20Quiero%20comprar%20los%20Bloques%20de%20Construccion%20que%20vi%20en%20ezze.games",
+      "destacado": true,
+      "descripcion": "Set de 120 piezas de madera ecológica para armar torres y casas."
+    },
+    {
+      "id": "toy_3",
+      "nombre": "Nave Espacial con Luces y Sonido",
+      "precio": "$29.90",
+      "imagen_url": "/assets/covers/hexgl.jpg",
+      "link_whatsapp": "https://wa.me/595981000000?text=Hola!%20Quiero%20comprar%20la%20Nave%20Espacial%20que%20vi%20en%20ezze.games",
+      "destacado": true,
+      "descripcion": "Nave interestelar con cabina iluminada y efectos de despegue."
+    }
+  ],
+  "historial_partidas": [
+    {
+      "id": "part_1788136824998",
+      "usuario_id": "usr_1788136824907",
+      "juego_slug": "tower-game",
+      "puntaje": 0,
+      "duracion_segundos": 0,
+      "created_at": "2026-08-31T00:40:24.999Z"
+    },
+    {
+      "id": "part_1788137220588",
+      "usuario_id": "usr_1788137220523",
+      "juego_slug": "tower-game",
+      "puntaje": 0,
+      "duracion_segundos": 0,
+      "created_at": "2026-08-31T00:47:00.588Z"
+    }
+  ],
+  "comentarios": [],
+  "votos": []
+}

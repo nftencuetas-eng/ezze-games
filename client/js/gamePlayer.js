@@ -1,5 +1,5 @@
 /**
- * GESTOR DEL REPRODUCTOR DE JUEGOS (THEATER MODE, FULLSCREEN, STATS & COMMENTS)
+ * GESTOR DEL REPRODUCTOR DE JUEGOS (THEATER MODE, FULLSCREEN, STATS, COMMENTS & HEARTBEAT)
  */
 
 class GamePlayer {
@@ -21,6 +21,7 @@ class GamePlayer {
 
     this.currentGame = null;
     this.isTheater = false;
+    this.heartbeatTimer = null;
 
     this.initEvents();
   }
@@ -52,7 +53,7 @@ class GamePlayer {
 
       if (!inputText.value.trim() || !this.currentGame) return;
 
-      const user = inputUser.value.trim() || 'Jugador Eze';
+      const user = inputUser.value.trim() || window.api.currentUser?.username || 'Jugador Eze';
       const text = inputText.value.trim();
 
       const newC = await window.api.addComment(this.currentGame.slug, { user, text, rating: 5 });
@@ -63,6 +64,22 @@ class GamePlayer {
   }
 
   async open(gameSlug) {
+    // 1. Validar acceso con el Backend (Vidas / Límite diario de tiempo)
+    const access = await window.api.checkGameAccess(gameSlug);
+    if (!access.allowed) {
+      if (access.reason === 'NO_LIVES') {
+        window.app.openQuizModal();
+        return;
+      }
+      if (access.reason === 'TIME_LIMIT_REACHED') {
+        alert(`⏰ Control Parental: ${access.message}`);
+        return;
+      }
+    }
+
+    // Actualizar UI del usuario (vidas descontadas)
+    window.app.updateUserUI();
+
     const game = await window.api.getGameDetails(gameSlug);
     if (!game) return;
 
@@ -78,8 +95,11 @@ class GamePlayer {
     // Cargar iframe con versionado en tiempo real anti-cache
     this.iframe.src = `${game.gamePath}?t=${Date.now()}`;
 
-    // Registrar partida
+    // Registrar partida en backend
     window.api.recordPlay(game.slug);
+
+    // Iniciar Heartbeat de tiempo jugado y XP cada 60 segundos
+    this.startHeartbeat();
 
     // Cargar comentarios
     this.renderComments(game.comments || []);
@@ -91,7 +111,26 @@ class GamePlayer {
     document.body.style.overflow = 'hidden';
   }
 
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(async () => {
+      const res = await window.api.sendHeartbeat(1, 15); // 1 minuto jugado = +15 XP
+      window.app.updateUserUI();
+      if (res.subioNivel) {
+        alert(`🎉 ¡FELICITACIONES! Has alcanzado el Nivel ${res.nivel} ⭐`);
+      }
+    }, 60000);
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
   close() {
+    this.stopHeartbeat();
     this.iframe.src = 'about:blank';
     this.modal.classList.add('hidden');
     document.body.style.overflow = 'auto';
@@ -161,7 +200,7 @@ class GamePlayer {
       card.className = 'related-game-card';
       card.innerHTML = `
         <div class="related-thumb">
-          <img src="${coverSrc}" class="related-cover-img" alt="${g.title}" onerror="this.src='/assets/covers/moto-x3m.jpg'">
+          <img src="${coverSrc}" class="related-cover-img" alt="${g.title}" onerror="this.src='/assets/covers/tower-game.jpg'">
         </div>
         <div class="related-info">
           <h4>${g.title}</h4>

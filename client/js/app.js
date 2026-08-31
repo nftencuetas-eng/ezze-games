@@ -1,5 +1,6 @@
 /**
- * CONTROLADOR PRINCIPAL DE LA PLATAFORMA "eze"
+ * CONTROLADOR PRINCIPAL DE LA PLATAFORMA - EZZE.GAMES
+ * Integra catálogo, búsqueda, autenticación, perfiles, vidas, quiz educativo y álbum de stickers.
  */
 
 class EzeGamingApp {
@@ -12,6 +13,11 @@ class EzeGamingApp {
     this.currentHeroIndex = 0;
     this.heroInterval = null;
 
+    // Estado del Quiz Educativo
+    this.quizQuestions = [];
+    this.currentQuizIndex = 0;
+    this.quizAnswers = [];
+
     this.initElements();
     this.initApp();
   }
@@ -23,8 +29,22 @@ class EzeGamingApp {
     this.heroSlider = document.getElementById('heroSlider');
     this.activeCategoryTitle = document.getElementById('activeCategoryTitle');
     this.gamesCountBadge = document.getElementById('gamesCountBadge');
-    this.statPlayers = document.getElementById('statPlayers');
-    this.statPlays = document.getElementById('statPlays');
+
+    // Elementos de Usuario
+    this.navLivesCount = document.getElementById('navLivesCount');
+    this.navCoinsCount = document.getElementById('navCoinsCount');
+    this.navAvatar = document.getElementById('navAvatar');
+    this.navUsername = document.getElementById('navUsername');
+    this.navLevelBadge = document.getElementById('navLevelBadge');
+    this.btnNavProfile = document.getElementById('btnNavProfile');
+    this.btnNavAlbum = document.getElementById('btnNavAlbum');
+    this.btnNavLives = document.getElementById('btnNavLives');
+
+    // Modales
+    this.authModal = document.getElementById('authModal');
+    this.profileModal = document.getElementById('profileModal');
+    this.albumModal = document.getElementById('albumModal');
+    this.quizModal = document.getElementById('quizModal');
   }
 
   async initApp() {
@@ -34,9 +54,14 @@ class EzeGamingApp {
     this.initSearch();
     await this.loadGames();
     this.initHeroSlider();
-    this.loadGlobalStats();
+    this.initUserAndModals();
+    this.loadToyStore();
 
-    // Comprobar si hay juego en la URL hash (#play-angry-pigs-3d)
+    // Sincronizar perfil con backend
+    await window.api.getProfile();
+    this.updateUserUI();
+
+    // Comprobar si hay juego en el hash
     const hash = window.location.hash;
     if (hash && hash.startsWith('#play-')) {
       const slug = hash.replace('#play-', '');
@@ -44,6 +69,254 @@ class EzeGamingApp {
     }
   }
 
+  // --- INTERFAZ DE USUARIO & GAMIFICACIÓN ---
+  updateUserUI() {
+    const user = window.api.currentUser;
+    if (!user) return;
+
+    if (this.navLivesCount) {
+      const max = user.max_vidas || 5;
+      this.navLivesCount.textContent = user.es_premium ? '∞' : `${user.vidas}/${max}`;
+    }
+    if (this.navCoinsCount) this.navCoinsCount.textContent = user.monedas || 0;
+    if (this.navAvatar) this.navAvatar.textContent = user.avatar || '🦊';
+    if (this.navUsername) this.navUsername.textContent = user.username || 'Gamer';
+    if (this.navLevelBadge) this.navLevelBadge.textContent = `Nvl ${user.nivel || 1}`;
+
+    // Actualizar datos del modal de perfil
+    const bigAvatar = document.getElementById('profileAvatarBig');
+    const bigUser = document.getElementById('profileUsernameBig');
+    const lvlText = document.getElementById('profileLevelText');
+    const xpBar = document.getElementById('profileXpBar');
+    const playedToday = document.getElementById('profilePlayedToday');
+    const limitLabel = document.getElementById('labelDailyLimit');
+    const limitInput = document.getElementById('inputDailyLimit');
+
+    if (bigAvatar) bigAvatar.textContent = user.avatar || '🦊';
+    if (bigUser) bigUser.textContent = user.username || 'Gamer';
+    if (lvlText) lvlText.textContent = `Nivel ${user.nivel || 1} • ${user.xp || 0} XP`;
+    if (xpBar) {
+      const currentLevelXp = (user.xp || 0) % 100;
+      xpBar.style.width = `${Math.min(100, currentLevelXp)}%`;
+    }
+    if (playedToday) playedToday.textContent = `${user.tiempo_jugado_hoy || 0} min`;
+    if (limitLabel) limitLabel.textContent = `${user.limite_diario_minutos || 60} min`;
+    if (limitInput) limitInput.value = user.limite_diario_minutos || 60;
+  }
+
+  initUserAndModals() {
+    // Abrir Perfil o Auth
+    this.btnNavProfile.addEventListener('click', () => {
+      this.profileModal.classList.remove('hidden');
+    });
+
+    // Abrir Álbum de Stickers
+    this.btnNavAlbum.addEventListener('click', () => {
+      this.openAlbumModal();
+    });
+
+    // Clic en vidas abre Quiz para recargar
+    this.btnNavLives.addEventListener('click', () => {
+      this.openQuizModal();
+    });
+
+    // Cerrar Modales
+    document.getElementById('btnCloseAuth').addEventListener('click', () => this.authModal.classList.add('hidden'));
+    document.getElementById('btnCloseProfile').addEventListener('click', () => this.profileModal.classList.add('hidden'));
+    document.getElementById('btnCloseAlbum').addEventListener('click', () => this.albumModal.classList.add('hidden'));
+    document.getElementById('btnCloseQuiz').addEventListener('click', () => this.quizModal.classList.add('hidden'));
+    document.getElementById('btnFinishQuiz').addEventListener('click', () => this.quizModal.classList.add('hidden'));
+
+    // Configuración de Auth (Tabs Login / Register)
+    let isRegisterMode = false;
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const avatarGroup = document.getElementById('avatarPickerGroup');
+    const authTitle = document.getElementById('authModalTitle');
+    const submitBtn = document.getElementById('btnSubmitAuth');
+
+    tabLogin.addEventListener('click', () => {
+      isRegisterMode = false;
+      tabLogin.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+      tabRegister.style.background = 'rgba(255,255,255,0.1)';
+      avatarGroup.classList.add('hidden');
+      authTitle.textContent = 'Iniciar Sesión';
+      submitBtn.textContent = 'ENTRAR A EZZE.GAMES';
+    });
+
+    tabRegister.addEventListener('click', () => {
+      isRegisterMode = true;
+      tabRegister.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+      tabLogin.style.background = 'rgba(255,255,255,0.1)';
+      avatarGroup.classList.remove('hidden');
+      authTitle.textContent = 'Crear Nueva Cuenta';
+      submitBtn.textContent = 'REGISTRARME Y JUGAR';
+    });
+
+    // Selección de Avatar en Registro
+    let selectedAvatar = '🦊';
+    document.querySelectorAll('.avatar-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedAvatar = opt.getAttribute('data-avatar');
+      });
+    });
+
+    // Envío del Formulario de Auth
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const u = document.getElementById('authUsername').value.trim();
+      const p = document.getElementById('authPassword').value;
+
+      if (!u || !p) return;
+
+      let res;
+      if (isRegisterMode) {
+        res = await window.api.register(u, p, selectedAvatar);
+      } else {
+        res = await window.api.login(u, p);
+      }
+
+      if (res.error) {
+        alert(`❌ ${res.error}`);
+      } else {
+        alert(`✅ ${res.message}`);
+        this.authModal.classList.add('hidden');
+        this.updateUserUI();
+      }
+    });
+
+    // Google 1-Click Login
+    document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
+      const randomName = 'JugadorGoogle_' + Math.floor(Math.random() * 900 + 100);
+      const res = await window.api.googleLogin(randomName, `${randomName.toLowerCase()}@gmail.com`, '🚀');
+      alert(`✅ ${res.message}`);
+      this.authModal.classList.add('hidden');
+      this.updateUserUI();
+    });
+
+    // Control Parental Slider
+    const inputLimit = document.getElementById('inputDailyLimit');
+    const labelLimit = document.getElementById('labelDailyLimit');
+    inputLimit.addEventListener('input', (e) => {
+      labelLimit.textContent = `${e.target.value} min`;
+    });
+
+    document.getElementById('btnSaveProfile').addEventListener('click', async () => {
+      const limit = parseInt(inputLimit.value);
+      await window.api.updateProfile({ limite_diario_minutos: limit });
+      alert('✅ Ajustes de perfil y control parental guardados.');
+      this.profileModal.classList.add('hidden');
+      this.updateUserUI();
+    });
+  }
+
+  // --- ÁLBUM DE STICKERS ---
+  async openAlbumModal() {
+    const data = await window.api.getStickerAlbum();
+    const grid = document.getElementById('stickersGrid');
+    const percentText = document.getElementById('albumPercentText');
+    const progressBar = document.getElementById('albumProgressBar');
+
+    percentText.textContent = `${data.progreso.desbloqueados} / ${data.progreso.total} Desbloqueados (${data.progreso.porcentaje}%)`;
+    progressBar.style.width = `${data.progreso.porcentaje}%`;
+
+    grid.innerHTML = '';
+    data.album.forEach(stk => {
+      const el = document.createElement('div');
+      el.className = `sticker-item ${stk.desbloqueado ? 'unlocked' : 'locked'}`;
+      el.innerHTML = `
+        <div class="sticker-icon">${stk.icono}</div>
+        <div class="sticker-name">${stk.nombre}</div>
+        <span class="sticker-badge">${stk.desbloqueado ? stk.rareza : `Nivel ${stk.nivel_desbloqueo}`}</span>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">${stk.descripcion}</div>
+      `;
+      grid.appendChild(el);
+    });
+
+    this.albumModal.classList.remove('hidden');
+  }
+
+  // --- QUIZ EDUCATIVO ("APRENDER PARA JUGAR") ---
+  async openQuizModal() {
+    this.quizQuestions = await window.api.getQuizQuestions();
+    this.currentQuizIndex = 0;
+    this.quizAnswers = [];
+
+    document.getElementById('quizQuestionContainer').classList.remove('hidden');
+    document.getElementById('quizResultContainer').classList.add('hidden');
+
+    this.renderQuizQuestion();
+    this.quizModal.classList.remove('hidden');
+  }
+
+  renderQuizQuestion() {
+    const q = this.quizQuestions[this.currentQuizIndex];
+    if (!q) {
+      this.finishQuiz();
+      return;
+    }
+
+    document.getElementById('quizCategory').textContent = q.categoria;
+    document.getElementById('quizCounterText').textContent = `Pregunta ${this.currentQuizIndex + 1} de ${this.quizQuestions.length}`;
+    document.getElementById('quizQuestionText').textContent = q.pregunta;
+
+    const optGrid = document.getElementById('quizOptionsGrid');
+    optGrid.innerHTML = '';
+
+    q.opciones.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-option-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        this.quizAnswers.push({ questionId: q.id, selectedAnswer: opt });
+        this.currentQuizIndex++;
+        this.renderQuizQuestion();
+      });
+      optGrid.appendChild(btn);
+    });
+  }
+
+  async finishQuiz() {
+    const res = await window.api.submitQuizAnswers(this.quizAnswers);
+    document.getElementById('quizQuestionContainer').classList.add('hidden');
+    const resultBox = document.getElementById('quizResultContainer');
+    resultBox.classList.remove('hidden');
+
+    const icon = document.getElementById('quizResultIcon');
+    const title = document.getElementById('quizResultTitle');
+    const msg = document.getElementById('quizResultMessage');
+
+    if (res.aprobado) {
+      icon.textContent = '🎉';
+      title.textContent = '¡Excelente Trabajo!';
+      msg.textContent = `Acertaste ${res.correctCount} de ${res.totalQuestions}. ¡Has recargado +1 Vida y ganado +50 XP! ❤️⭐`;
+    } else {
+      icon.textContent = '💡';
+      title.textContent = '¡Casi lo logras!';
+      msg.textContent = `Acertaste ${res.correctCount} de ${res.totalQuestions}. Se necesitan 2 aciertos para recargar. ¡Inténtalo de nuevo!`;
+    }
+
+    this.updateUserUI();
+  }
+
+  // --- TIENDA DE JUGUETES ---
+  async loadToyStore() {
+    const data = await window.api.getToyStore();
+    const prod = data.tienda?.productos?.[0];
+    if (prod) {
+      const titleEl = document.getElementById('toyTitle');
+      const descEl = document.getElementById('toyDesc');
+      const btn = document.getElementById('toyWhatsappBtn');
+
+      if (titleEl) titleEl.textContent = `🧸 ${prod.nombre} (${prod.precio})`;
+      if (descEl) descEl.textContent = prod.descripcion;
+      if (btn) btn.href = prod.link_whatsapp;
+    }
+  }
+
+  // --- CATÁLOGO & HERO ---
   renderCategories() {
     this.categoryBar.innerHTML = '';
     CATEGORIES.forEach(cat => {
@@ -74,24 +347,12 @@ class EzeGamingApp {
       this.searchQuery = e.target.value.trim().toLowerCase();
       this.filterAndRenderGames();
     });
-
-    document.getElementById('btnClearSearch')?.addEventListener('click', () => {
-      this.searchInput.value = '';
-      this.searchQuery = '';
-      this.filterAndRenderGames();
-    });
   }
 
   async loadGames() {
     this.games = await window.api.getGames();
     this.featuredGames = this.games.filter(g => g.featured);
     this.filterAndRenderGames();
-  }
-
-  async loadGlobalStats() {
-    const stats = await window.api.getStats();
-    if (this.statPlayers) this.statPlayers.textContent = stats.onlinePlayers;
-    if (this.statPlays) this.statPlays.textContent = stats.totalPlays.toLocaleString();
   }
 
   filterAndRenderGames() {
@@ -140,7 +401,7 @@ class EzeGamingApp {
 
       card.innerHTML = `
         <div class="card-thumb-wrapper">
-          <img src="${coverSrc}" class="card-cover-img" alt="${game.title}" loading="lazy" onerror="this.src='/assets/covers/moto-x3m.jpg'">
+          <img src="${coverSrc}" class="card-cover-img" alt="${game.title}" loading="lazy" onerror="this.src='/assets/covers/tower-game.jpg'">
           ${game.badge ? `<span class="game-badge">${game.badge}</span>` : ''}
           <button class="btn-card-fav ${isFav ? 'active' : ''}" title="Añadir a favoritos">⭐</button>
           <div class="card-overlay">
@@ -158,13 +419,11 @@ class EzeGamingApp {
         </div>
       `;
 
-      // Evento Jugar
       card.querySelector('.card-thumb-wrapper').addEventListener('click', (e) => {
         if (e.target.classList.contains('btn-card-fav')) return;
         window.gamePlayer.open(game.slug);
       });
 
-      // Evento Favorito
       const favBtn = card.querySelector('.btn-card-fav');
       favBtn.addEventListener('click', (e) => {
         e.stopPropagation();

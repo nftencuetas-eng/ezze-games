@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ezze.games - Portal de Videojuegos Web</title>
+  <title>ezze.games - Portal de Videojuegos Web & Familia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/player.css">
+  <link rel="stylesheet" href="css/gamification.css">
 </head>
 <body>
 
@@ -26,16 +27,32 @@
       <input type="text" id="searchInput" class="search-input" placeholder="Buscar juegos, géneros, etiquetas..." autocomplete="off">
     </div>
 
-    <!-- ESTADÍSTICAS EN VIVO -->
-    <div class="nav-stats">
-      <div class="stat-pill">
-        <span>🟢 En línea:</span>
-        <strong id="statPlayers">180</strong>
+    <!-- CLUSTER DE USUARIO Y GAMIFICACIÓN -->
+    <div class="nav-user-cluster" id="navUserCluster">
+      <!-- Vidas -->
+      <div class="user-stat-pill lives-pill" id="btnNavLives" title="Tus Vidas de Juego (Clic para Recargar con Quiz)">
+        <span>❤️</span>
+        <span id="navLivesCount">5/5</span>
       </div>
-      <div class="stat-pill">
-        <span>🎮 Partidas:</span>
-        <strong id="statPlays">5,200</strong>
+
+      <!-- Monedas -->
+      <div class="user-stat-pill coins-pill" title="Monedas Virtuales Ganadas">
+        <span>🪙</span>
+        <span id="navCoinsCount">350</span>
       </div>
+
+      <!-- Álbum de Stickers -->
+      <button class="btn-album-nav" id="btnNavAlbum" title="Abrir Álbum Digital de Stickers">
+        <span>📔</span>
+        <span>ÁLBUM</span>
+      </button>
+
+      <!-- Perfil / Login -->
+      <button class="btn-profile-badge" id="btnNavProfile">
+        <span class="profile-avatar-circle" id="navAvatar">🦊</span>
+        <span id="navUsername">EzeGamer</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 6px; font-size: 11px;" id="navLevelBadge">Nvl 3</span>
+      </button>
     </div>
   </header>
 
@@ -54,28 +71,37 @@
       <!-- Inyectado dinámicamente -->
     </section>
 
+    <!-- BANNER DE LA TIENDA DE JUGUETES -->
+    <section class="toy-store-banner" id="toyStoreBanner">
+      <div class="toy-store-info">
+        <span class="toy-store-icon">🎁</span>
+        <div class="toy-store-text">
+          <h4 id="toyTitle">Juguetería Familiar Tiendfy</h4>
+          <p id="toyDesc">¡Consigue los juguetes oficiales de tus juegos favoritos con descuento especial!</p>
+        </div>
+      </div>
+      <a href="https://wa.me/595981000000?text=Hola!%20Quiero%20comprar%20juguetes%20de%20ezze.games" target="_blank" class="btn-whatsapp-store" id="toyWhatsappBtn">
+        <span>💬</span>
+        <span>PEDIR POR WHATSAPP</span>
+      </a>
+    </section>
+
     <!-- GRID DE JUEGOS -->
     <section class="catalog-section">
       <div class="catalog-header">
         <h2 class="catalog-title" id="activeCategoryTitle">🎮 Catálogo de Juegos</h2>
-        <span class="games-count" id="gamesCountBadge">Cargando...</span>
+        <span class="games-count-badge" id="gamesCountBadge">5 Juegos Disponibles</span>
       </div>
 
       <div class="games-grid" id="gamesGrid">
-        <!-- Tarjetas de juegos inyectadas dinámicamente -->
+        <!-- Renderizado dinámico de tarjetas -->
       </div>
     </section>
 
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <p>© 2026 <strong>ezze.games</strong> - Tu portal de videojuegos web favorito. Optimizado para Railway y la web moderna.</p>
-  </footer>
-
-  <!-- MODAL DEL REPRODUCTOR DE JUEGOS -->
+  <!-- MODAL: REPRODUCTOR DE JUEGOS (THEATER / FULLSCREEN) -->
   <div class="player-modal hidden" id="playerModal">
-    <!-- Navbar interna del reproductor -->
     <div class="player-navbar">
       <div class="player-nav-left">
         <button class="btn-back-portal" id="btnClosePlayer">◀ VOLVER AL PORTAL</button>
@@ -93,7 +119,6 @@
       </div>
     </div>
 
-    <!-- Pantalla del juego y detalles -->
     <div class="player-body">
       <div class="player-screen-wrapper" id="playerScreenWrapper">
         <iframe id="gameIframe" class="game-iframe" src="about:blank" scrolling="no" style="overflow: hidden;" allow="autoplay; fullscreen; gamepad; pointer-lock; accelerometer; gyroscope" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms"></iframe>
@@ -124,7 +149,6 @@
           </div>
         </div>
 
-        <!-- Sidebar de Juegos Relacionados -->
         <aside class="player-sidebar">
           <h3>🎮 También te puede gustar</h3>
           <div class="related-games-list" id="relatedGamesList">
@@ -135,10 +159,150 @@
     </div>
   </div>
 
+  <!-- MODAL: AUTENTICACIÓN / REGISTRO -->
+  <div class="gamify-modal hidden" id="authModal">
+    <div class="gamify-modal-card">
+      <div class="modal-header-row">
+        <h3 id="authModalTitle">Iniciar Sesión</h3>
+        <button class="btn-close-modal" id="btnCloseAuth">✕</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 18px;">
+        <button class="btn-primary-action" id="tabLogin" style="flex: 1; padding: 10px; font-size: 12px;">Entrar</button>
+        <button class="btn-primary-action" id="tabRegister" style="flex: 1; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.1);">Registrarse</button>
+      </div>
+
+      <!-- Formulario Login / Registro -->
+      <form class="gamify-form" id="authForm">
+        <div class="form-input-group">
+          <label>Nombre de Usuario</label>
+          <input type="text" id="authUsername" class="gamify-input" placeholder="Ej: SuperGamer" required>
+        </div>
+
+        <div class="form-input-group">
+          <label>Contraseña</label>
+          <input type="password" id="authPassword" class="gamify-input" placeholder="Tu contraseña" required>
+        </div>
+
+        <!-- Selector de Avatar (Solo en Registro) -->
+        <div class="form-input-group hidden" id="avatarPickerGroup">
+          <label>Elige tu Avatar Favorito</label>
+          <div class="avatar-grid" id="avatarGrid">
+            <div class="avatar-option selected" data-avatar="🦊">🦊</div>
+            <div class="avatar-option" data-avatar="🦁">🦁</div>
+            <div class="avatar-option" data-avatar="🚀">🚀</div>
+            <div class="avatar-option" data-avatar="🐼">🐼</div>
+            <div class="avatar-option" data-avatar="🐲">🐲</div>
+            <div class="avatar-option" data-avatar="🦄">🦄</div>
+            <div class="avatar-option" data-avatar="🐱">🐱</div>
+            <div class="avatar-option" data-avatar="⚡">⚡</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary-action" id="btnSubmitAuth">ENTRAR A EZZE.GAMES</button>
+      </form>
+
+      <div style="margin: 18px 0; text-align: center; color: #64748b; font-size: 12px;">O INICIA CON UN CLIC</div>
+
+      <button class="btn-google-action" id="btnGoogleAuth">
+        <span style="font-size: 18px;">🌐</span>
+        <span>Continuar con Google</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: PERFIL & CONTROL PARENTAL -->
+  <div class="gamify-modal hidden" id="profileModal">
+    <div class="gamify-modal-card">
+      <div class="modal-header-row">
+        <h3>Mi Perfil de Jugador</h3>
+        <button class="btn-close-modal" id="btnCloseProfile">✕</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; background: #1e293b; padding: 16px; border-radius: 18px;">
+        <span style="font-size: 48px;" id="profileAvatarBig">🦊</span>
+        <div>
+          <h4 style="font-size: 18px; color: #fff;" id="profileUsernameBig">EzeGamer</h4>
+          <span style="font-size: 12px; color: #38bdf8; font-weight: 800;" id="profileLevelText">Nivel 3 • 240 / 300 XP</span>
+          <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 999px; margin-top: 6px; width: 180px; overflow: hidden;">
+            <div id="profileXpBar" style="background: #38bdf8; height: 100%; width: 80%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Parental -->
+      <div style="background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; margin-bottom: 18px;">
+        <h4 style="font-family: 'Bungee', cursive; font-size: 13px; color: #f59e0b; margin-bottom: 8px;">🛡️ Control Parental de Tiempo</h4>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Fija el tiempo máximo de juego diario para este perfil:</p>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 6px;">
+          <span>Límite diario:</span>
+          <span id="labelDailyLimit" style="color: #facc15;">60 min</span>
+        </div>
+        <input type="range" id="inputDailyLimit" min="15" max="180" step="15" value="60" style="width: 100%; accent-color: #f59e0b;">
+        
+        <div style="font-size: 11px; color: #64748b; margin-top: 8px;">
+          Tiempo jugado hoy: <strong id="profilePlayedToday" style="color: #fff;">18 min</strong>
+        </div>
+      </div>
+
+      <button class="btn-primary-action" id="btnSaveProfile" style="width: 100%;">GUARDAR AJUSTES</button>
+    </div>
+  </div>
+
+  <!-- MODAL: ÁLBUM DIGITAL DE STICKERS -->
+  <div class="gamify-modal hidden" id="albumModal">
+    <div class="gamify-modal-card album-card-modal">
+      <div class="modal-header-row">
+        <h3>📔 Álbum Digital de Stickers</h3>
+        <button class="btn-close-modal" id="btnCloseAlbum">✕</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 8px;">
+        <span>Progreso de Colección:</span>
+        <span id="albumPercentText" style="color: #f59e0b;">3 / 5 Desbloqueados</span>
+      </div>
+      <div class="album-progress-bar-container">
+        <div class="album-progress-fill" id="albumProgressBar" style="width: 60%;"></div>
+      </div>
+
+      <div class="stickers-grid" id="stickersGrid">
+        <!-- Inyectado por JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QUIZ EDUCATIVO ("APRENDER PARA JUGAR") -->
+  <div class="gamify-modal hidden" id="quizModal">
+    <div class="gamify-modal-card quiz-card-modal">
+      <div class="modal-header-row">
+        <h3>🎓 Recarga Educativa de Vidas</h3>
+        <button class="btn-close-modal" id="btnCloseQuiz">✕</button>
+      </div>
+
+      <div id="quizQuestionContainer">
+        <span class="quiz-category-tag" id="quizCategory">Matemáticas</span>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;" id="quizCounterText">Pregunta 1 de 3</div>
+        <h4 class="quiz-question-text" id="quizQuestionText">¿Cuánto es 8 × 7?</h4>
+
+        <div class="quiz-options-grid" id="quizOptionsGrid">
+          <!-- Opciones de respuesta -->
+        </div>
+      </div>
+
+      <div id="quizResultContainer" class="hidden" style="text-align: center; padding: 20px 0;">
+        <span style="font-size: 56px;" id="quizResultIcon">🎉</span>
+        <h3 style="font-family: 'Bungee', cursive; font-size: 20px; color: #fff; margin: 12px 0;" id="quizResultTitle">¡Felicitaciones!</h3>
+        <p style="font-size: 14px; color: #cbd5e1; margin-bottom: 20px;" id="quizResultMessage">Has respondido correctamente y recargado +1 Vida.</p>
+        <button class="btn-primary-action" id="btnFinishQuiz">¡VOLVER A JUGAR!</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPTS -->
-  <script src="js/gamesData.js?v=4.0"></script>
-  <script src="js/api.js?v=4.0"></script>
-  <script src="js/gamePlayer.js?v=4.0"></script>
-  <script src="js/app.js?v=4.0"></script>
+  <script src="js/gamesData.js?v=5.0"></script>
+  <script src="js/api.js?v=5.0"></script>
+  <script src="js/gamePlayer.js?v=5.0"></script>
+  <script src="js/app.js?v=5.0"></script>
 </body>
 </html>
